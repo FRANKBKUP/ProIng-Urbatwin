@@ -1,5 +1,7 @@
 <?php
 use App\Http\Controllers\MapaApiController;
+use App\Http\Controllers\AdminInfraestructuraController;
+use App\Http\Controllers\AdminZonaController;
 use App\Http\Controllers\AdminEscenarioController;
 use App\Http\Controllers\AdminUsuarioController;
 use App\Http\Controllers\ReporteController;
@@ -46,4 +48,21 @@ Route::middleware(['auth', 'rol:Administrador'])->prefix('admin')->name('admin.'
     Route::post('usuarios', [AdminUsuarioController::class, 'store'])->name('usuarios.store');
     Route::put('usuarios/{id}', [AdminUsuarioController::class, 'update'])
         ->whereNumber('id')->name('usuarios.update');
+
+    Route::get('infraestructuras', [AdminInfraestructuraController::class, 'index'])->name('infraestructuras.index');
+    Route::post('infraestructuras', [AdminInfraestructuraController::class, 'store'])->name('infraestructuras.store');
+    Route::post('infraestructuras/importar', [AdminInfraestructuraController::class, 'importar'])->name('infraestructuras.importar');
+    Route::post('infraestructuras/{id}/estado', [AdminInfraestructuraController::class, 'estado'])
+        ->whereNumber('id')->name('infraestructuras.estado');
+    Route::delete('infraestructuras/{id}', [AdminInfraestructuraController::class, 'destroy'])
+        ->whereNumber('id')->name('infraestructuras.destroy');
+
+    Route::get('zonas', [AdminZonaController::class, 'index'])->name('zonas.index');
+    Route::post('zonas', [AdminZonaController::class, 'store'])->name('zonas.store');
+    Route::get('zonas/{id}/editar', [AdminZonaController::class, 'editar'])
+        ->whereNumber('id')->name('zonas.editar');
+    Route::put('zonas/{id}', [AdminZonaController::class, 'update'])
+        ->whereNumber('id')->name('zonas.update');
+    Route::delete('zonas/{id}', [AdminZonaController::class, 'destroy'])
+        ->whereNumber('id')->name('zonas.destroy');
 });

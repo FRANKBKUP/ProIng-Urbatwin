@@ -31,6 +31,8 @@
         @if(auth()->user()->tieneRol('Administrador'))
             &nbsp; <a href="{{ route('admin.escenarios.index') }}" style="color:#fff">Escenarios</a>
             &nbsp; <a href="{{ route('admin.usuarios.index') }}" style="color:#fff">Usuarios</a>
+            &nbsp; <a href="{{ route('admin.infraestructuras.index') }}" style="color:#fff">Infraestructura</a>
+            &nbsp; <a href="{{ route('admin.zonas.index') }}" style="color:#fff">Zonas</a>
         @endif
     </span>
     <form method="POST" action="/logout">
@@ -41,6 +43,8 @@
 </header>
 <main>
     <aside>
+        <h3>Zona</h3>
+        <select id="zona" style="width:100%;padding:8px"></select>
         <h3>Escenario</h3>
         <div id="escenarios">Cargando…</div>
         @if($puedeAnalizar)
@@ -66,6 +70,7 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 let zonaId = null, escenarioId = null;
 let capaEscenario = null, capaExpuesta = null;
+let capaLimite = null, capaInfra = null;
 
 const estiloGris = {color: '#5E7380', weight: 3};
 const puntoGris = (f, ll) => L.circleMarker(ll, {radius: 6, color: '#fff', weight: 1, fillColor: '#5E7380', fillOpacity: 1});
@@ -74,16 +79,42 @@ const popup = (f, layer) => layer.bindPopup(`${f.properties.nombre} (${f.propert
 
 async function iniciar() {
     const zonas = await api('/api/zonas');
-    zonaId = zonas[0].id;
-    const limite = L.geoJSON(zonas[0].limite, {style: {color: '#1f6f8b', weight: 1, fill: false, dashArray: '6'}}).addTo(map);
-    map.fitBounds(limite.getBounds());
+    const sel = document.getElementById('zona');
+    if (zonas.length === 0) {
+        document.getElementById('escenarios').textContent = 'No hay zonas registradas.';
+        return;
+    }
+    zonas.forEach(z => {
+        const o = document.createElement('option');
+        o.value = z.id; o.textContent = z.nombre;
+        sel.append(o);
+    });
+    sel.addEventListener('change', () => cargarZona(zonas.find(z => String(z.id) === sel.value)));
+    await cargarZona(zonas[0]);
+}
+
+async function cargarZona(zona) {
+    zonaId = zona.id;
+    escenarioId = null;
+    [capaLimite, capaInfra, capaEscenario, capaExpuesta].forEach(c => { if (c) map.removeLayer(c); });
+    capaLimite = capaInfra = capaEscenario = capaExpuesta = null;
+
+    document.getElementById('total').textContent = '–';
+    document.getElementById('detalle').textContent = '';
+    ['btnAnalizar', 'btnReporte'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.disabled = true;
+    });
+
+    capaLimite = L.geoJSON(zona.limite, {style: {color: '#1f6f8b', weight: 1, fill: false, dashArray: '6'}}).addTo(map);
+    map.fitBounds(capaLimite.getBounds());
 
     const infra = await api(`/api/zonas/${zonaId}/infraestructuras`);
-    L.geoJSON(infra, {pointToLayer: puntoGris, style: estiloGris, onEachFeature: popup}).addTo(map);
+    capaInfra = L.geoJSON(infra, {pointToLayer: puntoGris, style: estiloGris, onEachFeature: popup}).addTo(map);
 
     const lista = await api(`/api/zonas/${zonaId}/escenarios`);
     const cont = document.getElementById('escenarios');
-    cont.textContent = '';
+    cont.textContent = lista.length === 0 ? 'Esta zona no tiene escenarios.' : '';
     lista.forEach(e => {
         const label = document.createElement('label');
         label.className = 'op';

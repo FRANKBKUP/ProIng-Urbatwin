@@ -6,11 +6,14 @@ use InvalidArgumentException;
 
 class GeoJsonService
 {
-    /**
-     * Recibe el texto pegado por el usuario (Feature, FeatureCollection o geometría)
-     * y devuelve el JSON de un Polygon/MultiPolygon listo para MariaDB.
-     */
-    public function poligono(string $texto): string
+    // Cuántos niveles de arreglos tiene cada tipo hasta llegar a una posición [lon, lat]
+    private const PROFUNDIDAD = [
+        'Point' => 0, 'MultiPoint' => 1, 'LineString' => 1,
+        'MultiLineString' => 2, 'Polygon' => 2, 'MultiPolygon' => 3,
+    ];
+
+    /** Acepta Feature, FeatureCollection (usa el primer elemento) o una geometría suelta. */
+    public function extraer(string $texto): array
     {
         $dato = json_decode($texto, true);
         if (!is_array($dato)) {
@@ -18,23 +21,49 @@ class GeoJsonService
         }
 
         $geom = match ($dato['type'] ?? null) {
-            'FeatureCollection' => $dato['features'][0]['geometry'] ?? null, // se usa el primer elemento
+            'FeatureCollection' => $dato['features'][0]['geometry'] ?? null,
             'Feature' => $dato['geometry'] ?? null,
             default => $dato,
         };
 
-        $tipo = is_array($geom) ? ($geom['type'] ?? null) : null;
-        if (!in_array($tipo, ['Polygon', 'MultiPolygon'], true)) {
+        if (!is_array($geom)) {
+            throw new InvalidArgumentException('No se encontró ninguna geometría en el texto.');
+        }
+
+        return $geom;
+    }
+
+    /** Solo áreas: para escenarios. */
+    public function poligono(string $texto): string
+    {
+        $geom = $this->extraer($texto);
+        if (!in_array($geom['type'] ?? null, ['Polygon', 'MultiPolygon'], true)) {
             throw new InvalidArgumentException('Debe contener un Polygon o MultiPolygon (un área, no un punto ni una línea).');
         }
 
-        // Polygon: anillos > posiciones; MultiPolygon: un nivel más
-        $this->revisar($geom['coordinates'] ?? null, $tipo === 'Polygon' ? 2 : 3);
+        return $this->geometria($geom);
+    }
+
+    /** Cualquier geometría soportada: para infraestructura. */
+    public function cualquiera(string $texto): string
+    {
+        return $this->geometria($this->extraer($texto));
+    }
+
+    /** Valida una geometría ya decodificada y devuelve su JSON limpio. */
+    public function geometria(?array $geom): string
+    {
+        $tipo = $geom['type'] ?? null;
+        if (!is_string($tipo) || !isset(self::PROFUNDIDAD[$tipo])) {
+            throw new InvalidArgumentException('Tipo de geometría no soportado o ausente.');
+        }
+
+        $this->revisar($geom['coordinates'] ?? null, self::PROFUNDIDAD[$tipo], $tipo);
 
         return json_encode(['type' => $tipo, 'coordinates' => $geom['coordinates']]);
     }
 
-    private function revisar(mixed $nodo, int $nivel): void
+    private function revisar(mixed $nodo, int $nivel, string $tipo): void
     {
         if (!is_array($nodo) || $nodo === []) {
             throw new InvalidArgumentException('Las coordenadas están vacías o mal formadas.');
@@ -50,15 +79,18 @@ class GeoJsonService
             return;
         }
 
-        if ($nivel === 1) { // un anillo: mínimo 4 posiciones y cerrado
+        if ($nivel === 1) { // lista de posiciones: un anillo o una línea
             $n = count($nodo);
-            if ($n < 4 || $nodo[0] !== $nodo[$n - 1]) {
+            if (in_array($tipo, ['Polygon', 'MultiPolygon'], true) && ($n < 4 || $nodo[0] != $nodo[$n - 1])) {
                 throw new InvalidArgumentException('Cada anillo debe tener al menos 4 puntos y terminar donde empieza.');
+            }
+            if (in_array($tipo, ['LineString', 'MultiLineString'], true) && $n < 2) {
+                throw new InvalidArgumentException('Una línea necesita al menos 2 puntos.');
             }
         }
 
         foreach ($nodo as $hijo) {
-            $this->revisar($hijo, $nivel - 1);
+            $this->revisar($hijo, $nivel - 1, $tipo);
         }
     }
 }

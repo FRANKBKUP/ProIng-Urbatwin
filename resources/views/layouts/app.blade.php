@@ -35,6 +35,8 @@
         @if(auth()->user()->tieneRol('Administrador'))
             <a href="{{ route('admin.escenarios.index') }}">Escenarios</a>
             <a href="{{ route('admin.usuarios.index') }}">Usuarios</a>
+            <a href="{{ route('admin.infraestructuras.index') }}">Infraestructura</a>
+            <a href="{{ route('admin.zonas.index') }}">Zonas</a>
         @endif
     </nav>
     <form method="POST" action="/logout">
