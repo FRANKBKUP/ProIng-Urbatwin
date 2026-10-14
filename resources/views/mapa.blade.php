@@ -24,7 +24,15 @@
 @php $puedeAnalizar = auth()->user()->tieneRol('Administrador', 'Analista'); @endphp
 <header>
     <!-- <strong>UrbanTwin Perú</strong> -->
-    <span><strong>UrbanTwin Perú</strong> &nbsp; <a href="/reportes" style="color:#fff">Reportes</a></span>
+    <!-- <span><strong>UrbanTwin Perú</strong> &nbsp; <a href="/reportes" style="color:#fff">Reportes</a></span> -->
+    <span>
+        <strong>UrbanTwin Perú</strong> &nbsp;
+        <a href="/reportes" style="color:#fff">Reportes</a>
+        @if(auth()->user()->tieneRol('Administrador'))
+            &nbsp; <a href="{{ route('admin.escenarios.index') }}" style="color:#fff">Escenarios</a>
+            &nbsp; <a href="{{ route('admin.usuarios.index') }}" style="color:#fff">Usuarios</a>
+        @endif
+    </span>
     <form method="POST" action="/logout">
         @csrf
         <span>{{ auth()->user()->nombre }} · {{ auth()->user()->rol->nombre }}</span>

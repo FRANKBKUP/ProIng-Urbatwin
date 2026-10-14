@@ -1,5 +1,7 @@
 <?php
 use App\Http\Controllers\MapaApiController;
+use App\Http\Controllers\AdminEscenarioController;
+use App\Http\Controllers\AdminUsuarioController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -30,4 +32,18 @@ Route::middleware('auth')->group(function () {
         Route::post('escenarios/{id}/reportes', [ReporteController::class, 'guardar'])
             ->middleware('rol:Analista,Administrador');
     });
+});
+
+Route::middleware(['auth', 'rol:Administrador'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('escenarios', [AdminEscenarioController::class, 'index'])->name('escenarios.index');
+    Route::post('escenarios', [AdminEscenarioController::class, 'store'])->name('escenarios.store');
+    Route::post('escenarios/{id}/estado', [AdminEscenarioController::class, 'estado'])
+        ->whereNumber('id')->name('escenarios.estado');
+    Route::delete('escenarios/{id}', [AdminEscenarioController::class, 'destroy'])
+        ->whereNumber('id')->name('escenarios.destroy');
+
+    Route::get('usuarios', [AdminUsuarioController::class, 'index'])->name('usuarios.index');
+    Route::post('usuarios', [AdminUsuarioController::class, 'store'])->name('usuarios.store');
+    Route::put('usuarios/{id}', [AdminUsuarioController::class, 'update'])
+        ->whereNumber('id')->name('usuarios.update');
 });
