@@ -67,7 +67,7 @@ const map = L.map('map', {zoomControl: false});
 L.control.zoom({position: 'topright'}).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     subdomains: 'abcd', maxZoom: 20,
-    attribution: '&copy; contribuidores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; contribuidores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
 let zonaId = null, escenarioId = null;

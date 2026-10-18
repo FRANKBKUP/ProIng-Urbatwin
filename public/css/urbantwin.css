@@ -921,3 +921,226 @@ td:last-child {
         box-shadow: none
     }
 }
+
+/* ----- Acceso (login) ----- */
+.acceso {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(380px, .75fr);
+    min-height: 100vh;
+    background: #fff
+}
+
+.acceso-mapa {
+    position: relative;
+    min-height: 100vh;
+    background: #DDE4E9;
+    overflow: hidden
+}
+
+#mapa-acceso {
+    position: absolute;
+    inset: 0;
+    pointer-events: none
+}
+
+.acceso-mapa .leaflet-control-attribution {
+    pointer-events: auto;
+    font-size: 11px
+}
+
+.m-salud {
+    background: #E4580B;
+    border: 2px solid #fff;
+    border-radius: 3px
+}
+
+.acceso-marca {
+    position: absolute;
+    top: 32px;
+    left: 32px;
+    z-index: 500;
+    max-width: 420px;
+    padding: 24px 26px;
+    border-radius: 8px;
+    background: var(--lateral);
+    color: #E6EEF3;
+    box-shadow: 0 12px 32px rgba(15, 36, 48, .28)
+}
+
+.acceso-titulo {
+    margin: 18px 0 8px;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    color: #fff
+}
+
+.acceso-marca p {
+    margin: 0;
+    color: var(--lateral-texto);
+    font-size: 15px
+}
+
+.acceso-ejemplo {
+    position: absolute;
+    left: 32px;
+    bottom: 32px;
+    z-index: 500;
+    width: 320px;
+    padding: 16px 18px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid var(--borde);
+    box-shadow: 0 12px 32px rgba(15, 36, 48, .22)
+}
+
+.acceso-ejemplo .encabezado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px
+}
+
+.acceso-ejemplo .etiqueta {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--suave)
+}
+
+.acceso-ejemplo .escenario {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 10px
+}
+
+.acceso-ejemplo .cifra {
+    font-size: 40px
+}
+
+.acceso-ejemplo .nota {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--suave)
+}
+
+.acceso-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 32px
+}
+
+.acceso-form form {
+    width: 100%;
+    max-width: 380px
+}
+
+.acceso-form h1 {
+    font-size: 28px;
+    margin-bottom: 6px
+}
+
+.campo-clave {
+    position: relative
+}
+
+.campo-clave input {
+    padding-right: 92px
+}
+
+.campo-clave button {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--primario);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s
+}
+
+.campo-clave button:hover {
+    background: var(--primario-claro)
+}
+
+.acceso-pie {
+    width: 100%;
+    max-width: 380px;
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid var(--borde);
+    font-size: 12px;
+    color: var(--suave)
+}
+
+.acceso-pie p {
+    margin: 0 0 4px
+}
+
+@media (max-width:1100px) {
+    .acceso-ejemplo {
+        display: none
+    }
+
+    .acceso-marca {
+        max-width: 340px
+    }
+}
+
+@media (max-width:900px) {
+    .acceso {
+        grid-template-columns: 1fr
+    }
+
+    .acceso-mapa {
+        min-height: 0;
+        height: 240px
+    }
+
+    .acceso-marca {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        max-width: none;
+        padding: 14px 16px
+    }
+
+    .acceso-titulo {
+        margin: 10px 0 0;
+        font-size: 17px
+    }
+
+    .acceso-marca p {
+        display: none
+    }
+
+    .acceso-form {
+        padding: 28px 20px
+    }
+}
+
+/* Corrección del título de la tarjeta de marca */
+.acceso-marca p.acceso-titulo {
+    margin: 18px 0 8px;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -.01em;
+    color: #fff
+}
+
+/* Mapa base desaturado: los colores de análisis (azul y naranja) destacan más */
+.leaflet-tile-pane {
+    filter: grayscale(.65) brightness(1.04) contrast(.9)
+}
