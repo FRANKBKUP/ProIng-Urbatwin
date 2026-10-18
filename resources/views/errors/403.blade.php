@@ -1,0 +1,1 @@
+@include('errors._base', ['codigo' => 403, 'titulo' => 'Sin permiso', 'mensaje' => 'Tu rol no permite esta acción.'])

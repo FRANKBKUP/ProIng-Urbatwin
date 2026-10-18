@@ -1,63 +1,51 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mapa · UrbanTwin</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
-    <style>
-        body{margin:0;font-family:system-ui,sans-serif;color:#12303B}
-        header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#12303B;color:#fff}
-        header form{margin:0} header button{cursor:pointer}
-        main{display:flex;height:calc(100vh - 52px)}
-        aside{width:290px;padding:16px;overflow:auto;border-right:1px solid #ccd6da;box-sizing:border-box}
-        #map{flex:1}
-        h3{margin:16px 0 8px}
-        label.op{display:block;margin:8px 0}
-        .tag{font-size:12px;background:#fde7dc;color:#8a2b05;padding:2px 6px;border-radius:4px}
-        button.main{width:100%;min-height:44px;margin-top:12px;border:0;border-radius:8px;background:#1f6f8b;color:#fff;font-weight:600;cursor:pointer}
-        #total{font-size:36px;font-weight:700;color:#b93a0b}
-    </style>
-</head>
-<body>
-@php $puedeAnalizar = auth()->user()->tieneRol('Administrador', 'Analista'); @endphp
-<header>
-    <!-- <strong>UrbanTwin Perú</strong> -->
-    <!-- <span><strong>UrbanTwin Perú</strong> &nbsp; <a href="/reportes" style="color:#fff">Reportes</a></span> -->
-    <span>
-        <strong>UrbanTwin Perú</strong> &nbsp;
-        <a href="/reportes" style="color:#fff">Reportes</a>
-        @if(auth()->user()->tieneRol('Administrador'))
-            &nbsp; <a href="{{ route('admin.escenarios.index') }}" style="color:#fff">Escenarios</a>
-            &nbsp; <a href="{{ route('admin.usuarios.index') }}" style="color:#fff">Usuarios</a>
-            &nbsp; <a href="{{ route('admin.infraestructuras.index') }}" style="color:#fff">Infraestructura</a>
-            &nbsp; <a href="{{ route('admin.zonas.index') }}" style="color:#fff">Zonas</a>
-        @endif
-    </span>
-    <form method="POST" action="/logout">
-        @csrf
-        <span>{{ auth()->user()->nombre }} · {{ auth()->user()->rol->nombre }}</span>
-        <button type="submit">Cerrar sesión</button>
-    </form>
-</header>
-<main>
-    <aside>
-        <h3>Zona</h3>
-        <select id="zona" style="width:100%;padding:8px"></select>
-        <h3>Escenario</h3>
-        <div id="escenarios">Cargando…</div>
-        @if($puedeAnalizar)
-            <button class="main" id="btnAnalizar" disabled>Analizar exposición</button>
-            <button class="main" id="btnReporte" disabled style="background:#b93a0b">Generar reporte</button>
-        @endif
-        <h3>Resultado</h3>
-        <div id="total">–</div>
-        <div id="detalle" style="margin-top:8px"></div>
-    </aside>
-    <div id="map"></div>
-</main>
+@extends('layouts.app')
+@section('titulo', 'Mapa y análisis')
+@section('modo', 'modo-mapa')
 
+@push('estilos')
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+@endpush
+
+@section('contenido')
+    @php $puedeAnalizar = auth()->user()->tieneRol('Administrador', 'Analista'); @endphp
+    <h1>Mapa y análisis de exposición</h1>
+
+    <div class="mapa-grid">
+        <section class="glass" aria-label="Controles del análisis">
+            <h3>Zona</h3>
+            <select id="zona" aria-label="Zona"></select>
+
+            <h3 style="margin-top:20px">Escenario</h3>
+            <div id="escenarios">Cargando…</div>
+
+            @if($puedeAnalizar)
+                <button class="btn btn-bloque" id="btnAnalizar" disabled>Analizar exposición</button>
+                <button class="btn btn-alerta btn-bloque" id="btnReporte" disabled>Generar reporte</button>
+            @else
+                <p class="muted" style="margin-top:16px">Tu rol permite visualizar el mapa y los reportes, pero no ejecutar análisis.</p>
+            @endif
+        </section>
+
+        <div class="mapa-caja">
+            <div id="map"></div>
+            <div class="insignia" id="insignia" hidden></div>
+            <div class="leyenda">
+                <div><i style="background:#2F9BFF"></i> Área inundada</div>
+                <div><i style="background:#FF7A45"></i> Expuesto</div>
+                <div><i style="background:#9DB8C2"></i> No expuesto</div>
+            </div>
+        </div>
+
+        <section class="glass" aria-label="Resultado del análisis" aria-live="polite">
+            <h3>Resultado del análisis</h3>
+            <div class="cifra" id="total">–</div>
+            <p class="muted" style="margin:6px 0 14px">infraestructuras expuestas</p>
+            <div id="detalle"></div>
+        </section>
+    </div>
+@endsection
+
+@push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 const api = (url) => fetch(url, {headers: {'Accept': 'application/json'}})
@@ -69,13 +57,41 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 let zonaId = null, escenarioId = null;
-let capaEscenario = null, capaExpuesta = null;
-let capaLimite = null, capaInfra = null;
+let capaLimite = null, capaInfra = null, capaEscenario = null, capaExpuesta = null;
+const escenariosPorId = new Map();
 
-const estiloGris = {color: '#5E7380', weight: 3};
-const puntoGris = (f, ll) => L.circleMarker(ll, {radius: 6, color: '#fff', weight: 1, fillColor: '#5E7380', fillOpacity: 1});
-const puntoRojo = (f, ll) => L.circleMarker(ll, {radius: 9, color: '#fff', weight: 2, fillColor: '#ff6a2b', fillOpacity: 1});
-const popup = (f, layer) => layer.bindPopup(`${f.properties.nombre} (${f.properties.tipo})`);
+const estiloLinea = {color: '#9DB8C2', weight: 3};
+const puntoGris = (f, ll) => L.circleMarker(ll, {radius: 6, color: '#0A2A38', weight: 1.5, fillColor: '#9DB8C2', fillOpacity: 1});
+const puntoRojo = (f, ll) => L.circleMarker(ll, {radius: 9, color: '#fff', weight: 2, fillColor: '#FF7A45', fillOpacity: 1, className: 'expuesto'});
+
+// El popup se arma con textContent: un nombre con HTML no se ejecuta (evita XSS).
+const popup = (f, layer) => layer.bindPopup(() => {
+    const d = document.createElement('div');
+    d.textContent = `${f.properties.nombre} (${f.properties.tipo})`;
+    return d;
+});
+
+function mostrarTotal(n) {
+    const el = document.getElementById('total');
+    if (n === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = n; return; }
+    let t0 = null;
+    const paso = (t) => {
+        t0 ??= t;
+        const p = Math.min((t - t0) / 600, 1);
+        el.textContent = Math.round(n * p);
+        if (p < 1) requestAnimationFrame(paso);
+    };
+    requestAnimationFrame(paso);
+}
+
+function limpiarResultado() {
+    document.getElementById('total').textContent = '–';
+    document.getElementById('detalle').textContent = '';
+    ['btnAnalizar', 'btnReporte'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.disabled = true;
+    });
+}
 
 async function iniciar() {
     const zonas = await api('/api/zonas');
@@ -98,30 +114,27 @@ async function cargarZona(zona) {
     escenarioId = null;
     [capaLimite, capaInfra, capaEscenario, capaExpuesta].forEach(c => { if (c) map.removeLayer(c); });
     capaLimite = capaInfra = capaEscenario = capaExpuesta = null;
+    document.getElementById('insignia').hidden = true;
+    limpiarResultado();
 
-    document.getElementById('total').textContent = '–';
-    document.getElementById('detalle').textContent = '';
-    ['btnAnalizar', 'btnReporte'].forEach(id => {
-        const b = document.getElementById(id);
-        if (b) b.disabled = true;
-    });
-
-    capaLimite = L.geoJSON(zona.limite, {style: {color: '#1f6f8b', weight: 1, fill: false, dashArray: '6'}}).addTo(map);
+    capaLimite = L.geoJSON(zona.limite, {style: {color: '#3DD6D0', weight: 1.5, fill: false, dashArray: '6'}}).addTo(map);
     map.fitBounds(capaLimite.getBounds());
 
     const infra = await api(`/api/zonas/${zonaId}/infraestructuras`);
-    capaInfra = L.geoJSON(infra, {pointToLayer: puntoGris, style: estiloGris, onEachFeature: popup}).addTo(map);
+    capaInfra = L.geoJSON(infra, {pointToLayer: puntoGris, style: estiloLinea, onEachFeature: popup}).addTo(map);
 
     const lista = await api(`/api/zonas/${zonaId}/escenarios`);
+    escenariosPorId.clear();
     const cont = document.getElementById('escenarios');
     cont.textContent = lista.length === 0 ? 'Esta zona no tiene escenarios.' : '';
     lista.forEach(e => {
+        escenariosPorId.set(e.id, e);
         const label = document.createElement('label');
-        label.className = 'op';
+        label.className = 'escenario-opcion';
         const radio = document.createElement('input');
         radio.type = 'radio'; radio.name = 'esc'; radio.value = e.id;
         radio.addEventListener('change', () => elegir(e.id));
-        label.append(radio, ' ' + e.nombre + ' ');
+        label.append(radio, e.nombre);
         if (e.origen === 'simulado') {
             const t = document.createElement('span');
             t.className = 'tag'; t.textContent = 'Simulado';
@@ -135,13 +148,20 @@ async function elegir(id) {
     escenarioId = id;
     if (capaEscenario) map.removeLayer(capaEscenario);
     if (capaExpuesta) { map.removeLayer(capaExpuesta); capaExpuesta = null; }
-    const br = document.getElementById('btnReporte');
-    if (br) br.disabled = true;
-    document.getElementById('total').textContent = '–';
-    document.getElementById('detalle').textContent = '';
+    limpiarResultado();
+
     const area = await api(`/api/escenarios/${id}`);
-    capaEscenario = L.geoJSON(area, {style: {color: '#1f5f96', weight: 2, fillColor: '#2f9bff', fillOpacity: 0.35}}).addTo(map);
+    capaEscenario = L.geoJSON(area, {
+        style: {color: '#7FD3FF', weight: 2, fillColor: '#2F9BFF', fillOpacity: 0.4, className: 'inundacion'}
+    }).addTo(map);
     capaEscenario.bringToBack();
+    map.fitBounds(capaEscenario.getBounds(), {padding: [60, 60], maxZoom: 17});
+
+    const e = escenariosPorId.get(id);
+    const ins = document.getElementById('insignia');
+    ins.textContent = `${e.nivel.toUpperCase()} · ${e.origen === 'simulado' ? 'SIMULADO' : 'IMPORTADO'}`;
+    ins.hidden = false;
+
     const btn = document.getElementById('btnAnalizar');
     if (btn) btn.disabled = false;
 }
@@ -151,19 +171,29 @@ async function analizar() {
         const r = await api(`/api/escenarios/${escenarioId}/exposicion`);
         if (capaExpuesta) map.removeLayer(capaExpuesta);
         capaExpuesta = L.geoJSON(r.infraestructuras, {
-            pointToLayer: puntoRojo, style: {color: '#ff6a2b', weight: 6}, onEachFeature: popup
+            pointToLayer: puntoRojo, style: {color: '#FF7A45', weight: 6, className: 'expuesto'}, onEachFeature: popup
         }).addTo(map);
-        document.getElementById('total').textContent = r.total;
+
+        mostrarTotal(r.total);
         const br = document.getElementById('btnReporte');
         if (br) br.disabled = (r.total === 0);
+
         const det = document.getElementById('detalle');
         det.textContent = '';
+        if (r.total === 0) { det.textContent = 'Ninguna infraestructura expuesta.'; return; }
+
+        const max = Math.max(...Object.values(r.por_tipo));
         Object.entries(r.por_tipo).forEach(([tipo, n]) => {
-            const p = document.createElement('div');
-            p.textContent = `${tipo}: ${n}`;
-            det.append(p);
+            const fila = document.createElement('div');
+            fila.className = 'fila';
+            const nombre = document.createElement('span'); nombre.textContent = tipo;
+            const barra = document.createElement('div'); barra.className = 'barra-tipo';
+            const relleno = document.createElement('i'); barra.append(relleno);
+            const cant = document.createElement('b'); cant.textContent = n;
+            fila.append(nombre, barra, cant);
+            det.append(fila);
+            setTimeout(() => { relleno.style.width = (n / max * 100) + '%'; }, 30);
         });
-        if (r.total === 0) det.textContent = 'Ninguna infraestructura expuesta.';
     } catch (e) {
         alert('No se pudo analizar: ' + e.message);
     }
@@ -188,12 +218,12 @@ async function guardarReporte() {
         boton.disabled = false;
     }
 }
+
+const btnA = document.getElementById('btnAnalizar');
+if (btnA) btnA.addEventListener('click', analizar);
 const btnR = document.getElementById('btnReporte');
 if (btnR) btnR.addEventListener('click', guardarReporte);
 
-const btn = document.getElementById('btnAnalizar');
-if (btn) btn.addEventListener('click', analizar);
 iniciar().catch(e => { document.getElementById('escenarios').textContent = 'No se pudo cargar: ' + e.message; });
 </script>
-</body>
-</html>
+@endpush

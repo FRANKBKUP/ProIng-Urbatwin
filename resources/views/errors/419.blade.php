@@ -1,0 +1,1 @@
+@include('errors._base', ['codigo' => 419, 'titulo' => 'Sesión expirada', 'mensaje' => 'Tu sesión venció. Vuelve a cargar la página o inicia sesión de nuevo.'])

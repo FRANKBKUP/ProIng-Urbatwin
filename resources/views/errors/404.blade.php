@@ -1,0 +1,1 @@
+@include('errors._base', ['codigo' => 404, 'titulo' => 'No encontrado', 'mensaje' => 'No encontramos lo que buscas.'])
