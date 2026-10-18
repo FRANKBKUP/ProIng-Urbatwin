@@ -8,15 +8,19 @@
 
 @section('contenido')
     @php $puedeAnalizar = auth()->user()->tieneRol('Administrador', 'Analista'); @endphp
-    <h1>Mapa y análisis de exposición</h1>
+
+    <div class="cabecera">
+        <h1>Mapa y análisis de exposición</h1>
+        <p class="muted">Elige una zona y un escenario para ver el área inundada{{ $puedeAnalizar ? ' y analizar qué infraestructura queda expuesta' : '' }}.</p>
+    </div>
 
     <div class="mapa-grid">
-        <section class="glass" aria-label="Controles del análisis">
-            <h3>Zona</h3>
-            <select id="zona" aria-label="Zona"></select>
+        <section class="panel" aria-label="Controles del análisis">
+            <label for="zona" style="margin-top:0">Zona</label>
+            <select id="zona"></select>
 
-            <h3 style="margin-top:20px">Escenario</h3>
-            <div id="escenarios">Cargando…</div>
+            <h3 id="lblEsc">Escenario</h3>
+            <div id="escenarios" role="radiogroup" aria-labelledby="lblEsc">Cargando…</div>
 
             @if($puedeAnalizar)
                 <button class="btn btn-bloque" id="btnAnalizar" disabled>Analizar exposición</button>
@@ -30,17 +34,25 @@
             <div id="map"></div>
             <div class="insignia" id="insignia" hidden></div>
             <div class="leyenda">
-                <div><i style="background:#2F9BFF"></i> Área inundada</div>
-                <div><i style="background:#FF7A45"></i> Expuesto</div>
-                <div><i style="background:#9DB8C2"></i> No expuesto</div>
+                <div><i style="background:#2B7FD4;opacity:.6"></i> Área inundada</div>
+                <div><i style="background:#E4580B"></i> Expuesto</div>
+                <div><i style="background:#5B6B76"></i> No expuesto</div>
             </div>
         </div>
 
-        <section class="glass" aria-label="Resultado del análisis" aria-live="polite">
-            <h3>Resultado del análisis</h3>
-            <div class="cifra" id="total">–</div>
-            <p class="muted" style="margin:6px 0 14px">infraestructuras expuestas</p>
-            <div id="detalle"></div>
+        <section class="panel" aria-label="Resultado del análisis" aria-live="polite">
+            <h3>Resultado</h3>
+            <p class="vacio" id="vacio">{{ $puedeAnalizar ? 'Elige un escenario y pulsa «Analizar exposición».' : 'Elige un escenario para ver el área inundada.' }}</p>
+
+            <div id="resultado" hidden>
+                <div class="cifra" id="total"></div>
+                <p class="suave" id="rotulo" style="margin:6px 0 16px"></p>
+                <div id="detalle"></div>
+                <div id="seccionLista">
+                    <h3 style="margin-top:20px">Elementos expuestos</h3>
+                    <ul class="lista-expuestos" id="lista"></ul>
+                </div>
+            </div>
         </section>
     </div>
 @endsection
@@ -51,53 +63,45 @@
 const api = (url) => fetch(url, {headers: {'Accept': 'application/json'}})
     .then(r => { if (!r.ok) throw new Error('Error ' + r.status); return r.json(); });
 
-const map = L.map('map');
+const map = L.map('map', {zoomControl: false});
+L.control.zoom({position: 'topright'}).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; contribuidores de OpenStreetMap'
+    subdomains: 'abcd', maxZoom: 20,
+    attribution: '&copy; contribuidores de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
 }).addTo(map);
 
 let zonaId = null, escenarioId = null;
 let capaLimite = null, capaInfra = null, capaEscenario = null, capaExpuesta = null;
 const escenariosPorId = new Map();
+const capaPorId = new Map();
 
-const estiloLinea = {color: '#9DB8C2', weight: 3};
-const puntoGris = (f, ll) => L.circleMarker(ll, {radius: 6, color: '#0A2A38', weight: 1.5, fillColor: '#9DB8C2', fillOpacity: 1});
-const puntoRojo = (f, ll) => L.circleMarker(ll, {radius: 9, color: '#fff', weight: 2, fillColor: '#FF7A45', fillOpacity: 1, className: 'expuesto'});
+const estiloLinea = {color: '#5B6B76', weight: 3};
+const estiloExpuesta = {color: '#E4580B', weight: 5};
+const puntoNormal = (f, ll) => L.circleMarker(ll, {radius: 5, color: '#fff', weight: 1.5, fillColor: '#5B6B76', fillOpacity: 1});
+const puntoExpuesto = (f, ll) => L.circleMarker(ll, {radius: 8, color: '#fff', weight: 2, fillColor: '#E4580B', fillOpacity: 1});
 
-// El popup se arma con textContent: un nombre con HTML no se ejecuta (evita XSS).
+// Los popups se arman con textContent: un nombre con HTML no se ejecuta (evita XSS).
 const popup = (f, layer) => layer.bindPopup(() => {
     const d = document.createElement('div');
-    d.textContent = `${f.properties.nombre} (${f.properties.tipo})`;
+    const n = document.createElement('strong');
+    n.textContent = f.properties.nombre;
+    d.append(n, document.createElement('br'), f.properties.tipo);
     return d;
 });
 
-function mostrarTotal(n) {
-    const el = document.getElementById('total');
-    if (n === 0 || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = n; return; }
-    let t0 = null;
-    const paso = (t) => {
-        t0 ??= t;
-        const p = Math.min((t - t0) / 600, 1);
-        el.textContent = Math.round(n * p);
-        if (p < 1) requestAnimationFrame(paso);
-    };
-    requestAnimationFrame(paso);
-}
+const $ = (id) => document.getElementById(id);
 
 function limpiarResultado() {
-    document.getElementById('total').textContent = '–';
-    document.getElementById('detalle').textContent = '';
-    ['btnAnalizar', 'btnReporte'].forEach(id => {
-        const b = document.getElementById(id);
-        if (b) b.disabled = true;
-    });
+    $('resultado').hidden = true;
+    $('vacio').hidden = false;
+    ['btnAnalizar', 'btnReporte'].forEach(id => { const b = $(id); if (b) b.disabled = true; });
 }
 
 async function iniciar() {
     const zonas = await api('/api/zonas');
-    const sel = document.getElementById('zona');
+    const sel = $('zona');
     if (zonas.length === 0) {
-        document.getElementById('escenarios').textContent = 'No hay zonas registradas.';
+        $('escenarios').textContent = 'No hay zonas registradas.';
         return;
     }
     zonas.forEach(z => {
@@ -114,23 +118,24 @@ async function cargarZona(zona) {
     escenarioId = null;
     [capaLimite, capaInfra, capaEscenario, capaExpuesta].forEach(c => { if (c) map.removeLayer(c); });
     capaLimite = capaInfra = capaEscenario = capaExpuesta = null;
-    document.getElementById('insignia').hidden = true;
+    $('insignia').hidden = true;
     limpiarResultado();
 
-    capaLimite = L.geoJSON(zona.limite, {style: {color: '#3DD6D0', weight: 1.5, fill: false, dashArray: '6'}}).addTo(map);
+    capaLimite = L.geoJSON(zona.limite, {style: {color: '#5B6B76', weight: 1.5, fill: false, dashArray: '6 6'}}).addTo(map);
     map.fitBounds(capaLimite.getBounds());
 
     const infra = await api(`/api/zonas/${zonaId}/infraestructuras`);
-    capaInfra = L.geoJSON(infra, {pointToLayer: puntoGris, style: estiloLinea, onEachFeature: popup}).addTo(map);
+    capaInfra = L.geoJSON(infra, {pointToLayer: puntoNormal, style: estiloLinea, onEachFeature: popup}).addTo(map);
 
     const lista = await api(`/api/zonas/${zonaId}/escenarios`);
     escenariosPorId.clear();
-    const cont = document.getElementById('escenarios');
+    const cont = $('escenarios');
     cont.textContent = lista.length === 0 ? 'Esta zona no tiene escenarios.' : '';
     lista.forEach(e => {
         escenariosPorId.set(e.id, e);
         const label = document.createElement('label');
         label.className = 'escenario-opcion';
+        label.style.margin = '6px 0';
         const radio = document.createElement('input');
         radio.type = 'radio'; radio.name = 'esc'; radio.value = e.id;
         radio.addEventListener('change', () => elegir(e.id));
@@ -152,55 +157,98 @@ async function elegir(id) {
 
     const area = await api(`/api/escenarios/${id}`);
     capaEscenario = L.geoJSON(area, {
-        style: {color: '#7FD3FF', weight: 2, fillColor: '#2F9BFF', fillOpacity: 0.4, className: 'inundacion'}
+        style: {color: '#1B5FA8', weight: 2, fillColor: '#2B7FD4', fillOpacity: 0.28}
     }).addTo(map);
     capaEscenario.bringToBack();
     map.fitBounds(capaEscenario.getBounds(), {padding: [60, 60], maxZoom: 17});
 
     const e = escenariosPorId.get(id);
-    const ins = document.getElementById('insignia');
+    const ins = $('insignia');
     ins.textContent = `${e.nivel.toUpperCase()} · ${e.origen === 'simulado' ? 'SIMULADO' : 'IMPORTADO'}`;
     ins.hidden = false;
 
-    const btn = document.getElementById('btnAnalizar');
+    const btn = $('btnAnalizar');
     if (btn) btn.disabled = false;
 }
 
+function mostrarResultado(r) {
+    $('vacio').hidden = true;
+    $('resultado').hidden = false;
+
+    const total = $('total');
+    total.textContent = r.total;
+    total.classList.toggle('hay', r.total > 0);
+    $('rotulo').textContent = r.total === 1 ? 'infraestructura expuesta' : 'infraestructuras expuestas';
+
+    const det = $('detalle');
+    const lista = $('lista');
+    det.textContent = '';
+    lista.textContent = '';
+    $('seccionLista').hidden = r.total === 0;
+
+    if (r.total === 0) {
+        det.textContent = 'Ninguna infraestructura expuesta en este escenario.';
+        return;
+    }
+
+    const max = Math.max(...Object.values(r.por_tipo));
+    Object.entries(r.por_tipo).forEach(([tipo, n]) => {
+        const fila = document.createElement('div');
+        fila.className = 'fila';
+        const nombre = document.createElement('span'); nombre.textContent = tipo;
+        const barra = document.createElement('div'); barra.className = 'barra-tipo';
+        const relleno = document.createElement('i'); barra.append(relleno);
+        const cant = document.createElement('b'); cant.textContent = n;
+        fila.append(nombre, barra, cant);
+        det.append(fila);
+        setTimeout(() => { relleno.style.width = (n / max * 100) + '%'; }, 30);
+    });
+
+    r.infraestructuras.features.forEach(f => {
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'item-expuesto';
+        const n = document.createElement('span'); n.textContent = f.properties.nombre;
+        const t = document.createElement('span'); t.className = 'tipo'; t.textContent = f.properties.tipo;
+        b.append(n, t);
+        b.addEventListener('click', () => {
+            const l = capaPorId.get(f.properties.id);
+            if (!l) return;
+            if (l.getLatLng) map.setView(l.getLatLng(), Math.max(map.getZoom(), 16));
+            else map.fitBounds(l.getBounds(), {maxZoom: 17, padding: [40, 40]});
+            l.openPopup();
+        });
+        li.append(b);
+        lista.append(li);
+    });
+}
+
 async function analizar() {
+    const boton = $('btnAnalizar');
+    boton.disabled = true;
+    boton.textContent = 'Analizando…';
     try {
         const r = await api(`/api/escenarios/${escenarioId}/exposicion`);
         if (capaExpuesta) map.removeLayer(capaExpuesta);
+        capaPorId.clear();
         capaExpuesta = L.geoJSON(r.infraestructuras, {
-            pointToLayer: puntoRojo, style: {color: '#FF7A45', weight: 6, className: 'expuesto'}, onEachFeature: popup
+            pointToLayer: puntoExpuesto, style: estiloExpuesta,
+            onEachFeature: (f, l) => { popup(f, l); capaPorId.set(f.properties.id, l); }
         }).addTo(map);
 
-        mostrarTotal(r.total);
-        const br = document.getElementById('btnReporte');
+        mostrarResultado(r);
+        const br = $('btnReporte');
         if (br) br.disabled = (r.total === 0);
-
-        const det = document.getElementById('detalle');
-        det.textContent = '';
-        if (r.total === 0) { det.textContent = 'Ninguna infraestructura expuesta.'; return; }
-
-        const max = Math.max(...Object.values(r.por_tipo));
-        Object.entries(r.por_tipo).forEach(([tipo, n]) => {
-            const fila = document.createElement('div');
-            fila.className = 'fila';
-            const nombre = document.createElement('span'); nombre.textContent = tipo;
-            const barra = document.createElement('div'); barra.className = 'barra-tipo';
-            const relleno = document.createElement('i'); barra.append(relleno);
-            const cant = document.createElement('b'); cant.textContent = n;
-            fila.append(nombre, barra, cant);
-            det.append(fila);
-            setTimeout(() => { relleno.style.width = (n / max * 100) + '%'; }, 30);
-        });
     } catch (e) {
         alert('No se pudo analizar: ' + e.message);
+    } finally {
+        boton.disabled = false;
+        boton.textContent = 'Analizar exposición';
     }
 }
 
 async function guardarReporte() {
-    const boton = document.getElementById('btnReporte');
+    const boton = $('btnReporte');
     boton.disabled = true;
     try {
         const res = await fetch(`/api/escenarios/${escenarioId}/reportes`, {
@@ -219,11 +267,11 @@ async function guardarReporte() {
     }
 }
 
-const btnA = document.getElementById('btnAnalizar');
+const btnA = $('btnAnalizar');
 if (btnA) btnA.addEventListener('click', analizar);
-const btnR = document.getElementById('btnReporte');
+const btnR = $('btnReporte');
 if (btnR) btnR.addEventListener('click', guardarReporte);
 
-iniciar().catch(e => { document.getElementById('escenarios').textContent = 'No se pudo cargar: ' + e.message; });
+iniciar().catch(e => { $('escenarios').textContent = 'No se pudo cargar: ' + e.message; });
 </script>
 @endpush
