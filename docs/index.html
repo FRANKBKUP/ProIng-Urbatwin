@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="UrbanTwin Perú reúne mapas de riesgo, registros de lluvia y huellas de inundación para la consulta territorial.">
+    <meta name="theme-color" content="#f5f6f1">
+    <title>UrbanTwin Perú · Atlas de lluvias y riesgo</title>
+    <link rel="stylesheet" href="assets/portada.css">
+</head>
+<body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <header class="cabecera">
+        <nav class="ancho barra" aria-label="Navegación principal">
+            <a class="marca" href="./"><span class="marca-icono" aria-hidden="true"></span>UrbanTwin <span>Perú</span></a>
+            <div class="barra-enlaces">
+                <a href="#visor">Recorrido</a>
+                <a href="#documentacion">Documentación</a>
+                <a class="boton boton-secundario" href="https://github.com/FRANKBKUP/ProIng-Urbatwin">GitHub <span aria-hidden="true">↗</span></a>
+            </div>
+        </nav>
+    </header>
+
+    <main id="contenido">
+        <section class="ancho hero" aria-labelledby="titulo">
+            <div>
+                <p class="rotulo">Atlas territorial del Perú</p>
+                <h1 id="titulo">Lluvia y riesgo, en el mapa</h1>
+                <p class="entradilla">Explora escenarios de riesgo por distrito, registros de lluvia y las huellas de las inundaciones de Piura en 2017. UrbanTwin reúne estas fuentes para apoyar la consulta y el análisis preventivo.</p>
+                <a class="boton boton-principal" href="#visor">Conocer el visor <span aria-hidden="true">↓</span></a>
+            </div>
+            <figure class="imagen-hero">
+                <img src="assets/piura-modis-2017.jpg" alt="Imagen satelital del litoral de Piura y las áreas inundadas durante El Niño Costero de 2017" fetchpriority="high">
+                <figcaption>
+                    <div><strong>Piura durante El Niño Costero</strong><span>23 de marzo de 2017 · MODIS Aqua</span></div>
+                    <a href="https://science.nasa.gov/earth/earth-observatory/flood-waters-inundate-coastal-peru-89931/">NASA Earth Observatory <span aria-hidden="true">↗</span></a>
+                </figcaption>
+            </figure>
+        </section>
+
+        <section class="capas" aria-labelledby="titulo-capas">
+            <div class="ancho">
+                <h2 id="titulo-capas">Tres formas de leer el territorio</h2>
+                <div class="capas-lista">
+                    <article>
+                        <h3>Riesgo distrital</h3>
+                        <p>Categorías de riesgo por inundaciones y movimientos en masa publicadas por CENEPRED.</p>
+                        <a href="https://sigrid.cenepred.gob.pe/sigridv3/documento/23277">Escenario oficial <span aria-hidden="true">↗</span></a>
+                    </article>
+                    <article>
+                        <h3>Lluvia de marzo de 2017</h3>
+                        <p>Precipitación estimada por CHIRPS, expresada en milímetros y organizada por intervalos en el mapa.</p>
+                        <a href="https://www.chc.ucsb.edu/data/chirps">Datos CHIRPS <span aria-hidden="true">↗</span></a>
+                    </article>
+                    <article>
+                        <h3>Huellas de inundación en Piura</h3>
+                        <p>Áreas observadas por Copernicus EMS el 26 y el 30 de marzo de 2017.</p>
+                        <a href="https://mapping.emergency.copernicus.eu/activations/EMSR199/">Activación EMSR199 <span aria-hidden="true">↗</span></a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="ancho recorrido" id="visor" aria-labelledby="titulo-visor">
+            <div class="recorrido-texto">
+                <h2 id="titulo-visor">Así se consulta un distrito</h2>
+                <p>Elige un departamento, una provincia o un punto en el mapa. El visor enfoca el lugar y muestra la categoría, el período y la fuente de la capa activa.</p>
+                <p class="estado"><strong>Visor en línea en preparación.</strong> La imagen es una captura de la aplicación local.</p>
+            </div>
+            <figure class="captura">
+                <a href="assets/visor-riesgo.png" aria-label="Ampliar la captura del visor">
+                    <img src="assets/visor-riesgo.png" alt="Captura del visor con categorías de riesgo en el mapa de Perú y un resultado para el distrito de Vargas Guerra, Loreto" width="1440" height="900" loading="lazy">
+                </a>
+                <figcaption>Escenario de riesgo de inundación de CENEPRED · noviembre de 2026 a enero de 2027.</figcaption>
+            </figure>
+        </section>
+
+        <section class="ancho documentacion" id="documentacion" aria-labelledby="titulo-documentacion">
+            <div>
+                <h2 id="titulo-documentacion">Código y documentación</h2>
+                <p>Consulta el modelo de datos, cómo se importan las capas y los pasos para ejecutar UrbanTwin.</p>
+            </div>
+            <div class="documentacion-enlaces">
+                <a href="https://github.com/FRANKBKUP/ProIng-Urbatwin/blob/main/docs/arquitectura.md">Arquitectura y DER <span aria-hidden="true">↗</span></a>
+                <a href="https://github.com/FRANKBKUP/ProIng-Urbatwin#readme">Guía del proyecto <span aria-hidden="true">↗</span></a>
+            </div>
+        </section>
+    </main>
+    <footer class="ancho pie">
+        <p>UrbanTwin Perú · Proyecto académico</p>
+        <a href="https://github.com/FRANKBKUP/ProIng-Urbatwin">Repositorio público <span aria-hidden="true">↗</span></a>
+    </footer>
+</body>
+</html>
