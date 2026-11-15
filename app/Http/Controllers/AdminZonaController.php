@@ -10,9 +10,7 @@ use InvalidArgumentException;
 
 class AdminZonaController extends Controller
 {
-    public function __construct(private GeoJsonService $geo)
-    {
-    }
+    public function __construct(private GeoJsonService $geo) {}
 
     public function index()
     {
@@ -39,8 +37,7 @@ class AdminZonaController extends Controller
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['geojson' => $e->getMessage()])->withInput();
         } catch (QueryException) {
-            return back()->withErrors(['geojson' =>
-                'MariaDB no pudo interpretar la geometría. Revisa que el polígono sea válido.'
+            return back()->withErrors(['geojson' => 'La base espacial no pudo interpretar la geometría. Revisa que el polígono sea válido.',
             ])->withInput();
         }
 
@@ -50,14 +47,14 @@ class AdminZonaController extends Controller
     public function editar(int $id)
     {
         $zona = DB::table('zonas')->where('id', $id)->first(['id', 'nombre', 'descripcion']);
-        abort_if(!$zona, 404, 'Zona no encontrada');
+        abort_if(! $zona, 404, 'Zona no encontrada');
 
         return view('admin.zonas_editar', compact('zona'));
     }
 
     public function update(ZonaRequest $request, int $id)
     {
-        abort_if(!DB::table('zonas')->where('id', $id)->exists(), 404, 'Zona no encontrada');
+        abort_if(! DB::table('zonas')->where('id', $id)->exists(), 404, 'Zona no encontrada');
         $d = $request->validated();
 
         try {
@@ -74,8 +71,7 @@ class AdminZonaController extends Controller
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['geojson' => $e->getMessage()])->withInput();
         } catch (QueryException) {
-            return back()->withErrors(['geojson' =>
-                'MariaDB no pudo interpretar la geometría. Revisa que el polígono sea válido.'
+            return back()->withErrors(['geojson' => 'La base espacial no pudo interpretar la geometría. Revisa que el polígono sea válido.',
             ])->withInput();
         }
 
@@ -88,8 +84,7 @@ class AdminZonaController extends Controller
         $esc = DB::table('escenarios')->where('zona_id', $id)->count();
 
         if ($infra > 0 || $esc > 0) {
-            return back()->withErrors(['zona' =>
-                "La zona tiene $infra infraestructuras y $esc escenarios: elimínalos primero."
+            return back()->withErrors(['zona' => "La zona tiene $infra infraestructuras y $esc escenarios: elimínalos primero.",
             ]);
         }
 

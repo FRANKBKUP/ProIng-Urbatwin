@@ -1,0 +1,39 @@
+name: urbantwin-v2
+
+services:
+  postgis:
+    image: postgis/postgis:17-3.7
+    environment:
+      POSTGRES_DB: urbantwin_v2_dev
+      POSTGRES_USER: urbantwin
+      POSTGRES_PASSWORD: urbantwin_local_only
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - postgis_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbantwin -d urbantwin_v2_dev"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  postgis-test:
+    image: postgis/postgis:17-3.7
+    profiles: ["test"]
+    environment:
+      POSTGRES_DB: urbantwin_v2_test
+      POSTGRES_USER: urbantwin
+      POSTGRES_PASSWORD: urbantwin_test_only
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - postgis_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U urbantwin -d urbantwin_v2_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  postgis_dev:
+  postgis_test:

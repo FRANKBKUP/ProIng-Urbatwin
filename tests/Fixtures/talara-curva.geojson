@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"nombre": "Curva de prueba", "cota_m": 45.5},
+      "geometry": {"type": "LineString", "coordinates": [[-81.275,-4.582],[-81.273,-4.581],[-81.268,-4.582]]}
+    }
+  ]
+}

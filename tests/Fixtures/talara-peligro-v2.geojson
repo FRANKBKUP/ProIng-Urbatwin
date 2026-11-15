@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"nombre": "Polígono revisado"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-81.273,-4.574],[-81.270,-4.574],[-81.270,-4.570],[-81.273,-4.570],[-81.273,-4.574]]]}
+    }
+  ]
+}

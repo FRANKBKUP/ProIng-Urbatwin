@@ -10,9 +10,7 @@ use InvalidArgumentException;
 
 class AdminEscenarioController extends Controller
 {
-    public function __construct(private GeoJsonService $geo)
-    {
-    }
+    public function __construct(private GeoJsonService $geo) {}
 
     public function index()
     {
@@ -43,9 +41,8 @@ class AdminEscenarioController extends Controller
                 'SELECT ST_Intersects(ST_GeomFromGeoJSON(?), limite) AS ok FROM zonas WHERE id = ?',
                 [$geom, $d['zona_id']]
             );
-            if (!$cruza || !$cruza->ok) {
-                return back()->withErrors(['geojson' =>
-                    'El polígono no intersecta la zona elegida. ¿Invertiste latitud y longitud?'
+            if (! $cruza || ! $cruza->ok) {
+                return back()->withErrors(['geojson' => 'El polígono no intersecta la zona elegida. ¿Invertiste latitud y longitud?',
                 ])->withInput();
             }
 
@@ -55,8 +52,7 @@ class AdminEscenarioController extends Controller
                 [$d['zona_id'], $request->user()->id, $d['nombre'], $d['nivel'], $d['origen'], $geom]
             );
         } catch (QueryException) {
-            return back()->withErrors(['geojson' =>
-                'MariaDB no pudo interpretar la geometría. Revisa que el polígono sea válido.'
+            return back()->withErrors(['geojson' => 'La base espacial no pudo interpretar la geometría. Revisa que el polígono sea válido.',
             ])->withInput();
         }
 
@@ -74,8 +70,7 @@ class AdminEscenarioController extends Controller
     {
         $tieneReportes = DB::table('reportes')->where('escenario_id', $id)->exists();
         if ($tieneReportes) { // RN08
-            return back()->withErrors(['escenario' =>
-                'Este escenario tiene reportes asociados: no se elimina, solo se desactiva.'
+            return back()->withErrors(['escenario' => 'Este escenario tiene reportes asociados: no se elimina, solo se desactiva.',
             ]);
         }
 

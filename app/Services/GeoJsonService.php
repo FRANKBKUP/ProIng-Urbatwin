@@ -16,7 +16,7 @@ class GeoJsonService
     public function extraer(string $texto): array
     {
         $dato = json_decode($texto, true);
-        if (!is_array($dato)) {
+        if (! is_array($dato)) {
             throw new InvalidArgumentException('El texto no es un JSON válido.');
         }
 
@@ -26,7 +26,7 @@ class GeoJsonService
             default => $dato,
         };
 
-        if (!is_array($geom)) {
+        if (! is_array($geom)) {
             throw new InvalidArgumentException('No se encontró ninguna geometría en el texto.');
         }
 
@@ -37,7 +37,7 @@ class GeoJsonService
     public function poligono(string $texto): string
     {
         $geom = $this->extraer($texto);
-        if (!in_array($geom['type'] ?? null, ['Polygon', 'MultiPolygon'], true)) {
+        if (! in_array($geom['type'] ?? null, ['Polygon', 'MultiPolygon'], true)) {
             throw new InvalidArgumentException('Debe contener un Polygon o MultiPolygon (un área, no un punto ni una línea).');
         }
 
@@ -51,31 +51,37 @@ class GeoJsonService
     }
 
     /** Valida una geometría ya decodificada y devuelve su JSON limpio. */
-    public function geometria(?array $geom): string
+    public function geometria(?array $geom, bool $estricto = false): string
     {
         $tipo = $geom['type'] ?? null;
-        if (!is_string($tipo) || !isset(self::PROFUNDIDAD[$tipo])) {
+        if (! is_string($tipo) || ! isset(self::PROFUNDIDAD[$tipo])) {
             throw new InvalidArgumentException('Tipo de geometría no soportado o ausente.');
         }
 
-        $this->revisar($geom['coordinates'] ?? null, self::PROFUNDIDAD[$tipo], $tipo);
+        $this->revisar($geom['coordinates'] ?? null, self::PROFUNDIDAD[$tipo], $tipo, $estricto);
 
         return json_encode(['type' => $tipo, 'coordinates' => $geom['coordinates']]);
     }
 
-    private function revisar(mixed $nodo, int $nivel, string $tipo): void
+    private function revisar(mixed $nodo, int $nivel, string $tipo, bool $estricto): void
     {
-        if (!is_array($nodo) || $nodo === []) {
+        if (! is_array($nodo) || ! array_is_list($nodo) || $nodo === []) {
             throw new InvalidArgumentException('Las coordenadas están vacías o mal formadas.');
         }
 
         if ($nivel === 0) { // una posición [longitud, latitud]
-            if (count($nodo) < 2 || !is_numeric($nodo[0]) || !is_numeric($nodo[1])) {
+            if ($estricto && (count($nodo) !== 2 || ! collect($nodo)->every(
+                fn ($valor) => (is_int($valor) || is_float($valor)) && is_finite($valor)
+            ))) {
+                throw new InvalidArgumentException('Cada posición debe tener dos coordenadas numéricas finitas.');
+            }
+            if (count($nodo) < 2 || ! is_numeric($nodo[0]) || ! is_numeric($nodo[1])) {
                 throw new InvalidArgumentException('Hay una posición que no es [longitud, latitud].');
             }
             if (abs($nodo[0]) > 180 || abs($nodo[1]) > 90) {
                 throw new InvalidArgumentException('Hay coordenadas fuera de rango (longitud ±180, latitud ±90).');
             }
+
             return;
         }
 
@@ -90,7 +96,7 @@ class GeoJsonService
         }
 
         foreach ($nodo as $hijo) {
-            $this->revisar($hijo, $nivel - 1, $tipo);
+            $this->revisar($hijo, $nivel - 1, $tipo, $estricto);
         }
     }
 }

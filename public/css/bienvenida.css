@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap');
+
+.bienvenida {
+    --fondo: #f5f6f1;
+    --tinta: #14292a;
+    --secundario: #395355;
+    --linea: #d6dfd5;
+    --verde: #155b4c;
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    line-height: 1.5;
+}
+.bienvenida *, .bienvenida *::before, .bienvenida *::after { box-sizing: border-box; }
+.bienvenida a { color: inherit; text-underline-offset: .24em; }
+.bienvenida a:focus-visible { outline: 3px solid #c15a29; outline-offset: 4px; }
+.bienvenida-saltar { position: absolute; left: -500px; z-index: 2; padding: .55rem; background: #fff; }
+.bienvenida-saltar:focus { left: 1rem; top: 1rem; }
+.bienvenida-ancho { width: min(76rem, calc(100% - 4rem)); margin-inline: auto; }
+.bienvenida-cabecera { border-bottom: 1px solid var(--linea); }
+.bienvenida-nav, .bienvenida-nav-enlaces { display: flex; align-items: center; }
+.bienvenida-nav { justify-content: space-between; min-height: 4.9rem; gap: 1rem; }
+.bienvenida-nav-enlaces { flex-wrap: wrap; gap: clamp(.6rem, 2.4vw, 1.85rem); font-size: .9rem; font-weight: 650; }
+.bienvenida-nav-enlaces a, .bienvenida-marca { text-decoration: none; }
+.bienvenida-nav-enlaces > a:hover, .bienvenida-pie a:hover { text-decoration: underline; }
+.bienvenida-marca { display: flex; align-items: center; flex: 0 0 auto; gap: .28rem; font-size: 1.18rem; font-weight: 700; letter-spacing: -.035em; }
+.bienvenida-marca > span:first-child { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; margin-right: .3rem; border-radius: .65rem; background: var(--verde); color: #fff; }
+.bienvenida-pais { color: #557071; font-weight: 500; }
+.bienvenida-hero { display: grid; grid-template-columns: minmax(0, .93fr) minmax(0, 1.07fr); align-items: center; gap: clamp(1.5rem, 4.2vw, 3.7rem); padding-block: clamp(2.6rem, 6vw, 5.3rem); }
+.bienvenida-contexto { color: var(--verde); text-transform: uppercase; font-size: .76rem; letter-spacing: .14em; font-weight: 700; }
+.bienvenida h1, .bienvenida h2, .bienvenida h3 { line-height: 1.05; }
+.bienvenida h1 { margin: .16em 0 .23em; max-width: 10ch; font-size: clamp(3.1rem, 6.45vw, 6rem); letter-spacing: -.07em; text-wrap: balance; }
+.bienvenida-hero-texto > p:not(.bienvenida-contexto) { color: var(--secundario); max-width: 45ch; }
+.bienvenida-hero-texto > p:not(.bienvenida-contexto, .bienvenida-aviso) { margin: 0 0 1.6rem; font-size: clamp(1rem, 1.6vw, 1.22rem); }
+.bienvenida-hero-texto .bienvenida-aviso { font-size: .82rem; margin: .85rem 0 0; }
+.bienvenida .bienvenida-boton { display: inline-flex; align-items: center; gap: 1.2rem; padding: .65rem 1rem; border-radius: .45rem; font-weight: 700; text-decoration: none; }
+.bienvenida .bienvenida-boton-principal { background: var(--verde); color: #fff; padding: .85rem 1.2rem; }
+.bienvenida .bienvenida-boton-principal:hover { background: #0b493d; }
+.bienvenida .bienvenida-boton-sec { border: 1px solid #8ca89f; }
+.bienvenida-imagen { position: relative; isolation: isolate; min-width: 0; margin: 0; aspect-ratio: 1.22; border-radius: 1.05rem; overflow: hidden; background: #1c383b; }
+.bienvenida-imagen img { width: 100%; height: 100%; object-fit: cover; object-position: 55% 44%; }
+.bienvenida-imagen figcaption { position: absolute; inset: auto 0 0; display: flex; align-items: end; flex-wrap: wrap; justify-content: space-between; gap: .65rem; padding: 2rem clamp(.75rem, 2vw, 1.5rem) .9rem; color: #fff; background: linear-gradient(transparent, #102827f5); }
+.bienvenida-imagen figcaption span { display: block; color: #e2f1e9; margin-top: .15rem; }
+.bienvenida-imagen figcaption span, .bienvenida-imagen figcaption a { font-size: .75rem; }
+.bienvenida-herramientas { border-block: 1px solid var(--linea); background: #edf1e9; padding-block: clamp(2rem, 4vw, 3.3rem); }
+.bienvenida h2 { letter-spacing: -.038em; font-size: clamp(1.75rem, 3vw, 2.5rem); margin: 0 0 1.3rem; }
+.bienvenida-servicios { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.bienvenida-servicios article { border: 1px solid var(--linea); border-radius: .72rem; background: #fafbf7; padding: clamp(.9rem, 2.5vw, 1.4rem); }
+.bienvenida-servicios h3 { margin: .6rem 0; font-size: 1.18rem; }
+.bienvenida-servicios p { margin: 0; color: var(--secundario); font-size: .95rem; }
+.bienvenida-icono { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .5rem; background: #dcefdf; color: #195846; }
+.bienvenida-pie, .bienvenida-pie > div { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.bienvenida-pie { justify-content: space-between; min-height: 4.8rem; font-size: .82rem; color: var(--secundario); }
+@media (max-width: 760px) {
+    .bienvenida-ancho { width: calc(100% - 2rem); }
+    .bienvenida-hero { grid-template-columns: 1fr; }
+    .bienvenida-imagen { aspect-ratio: 1.45; }
+    .bienvenida-servicios { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+    .bienvenida-nav-enlaces > a:first-child { display: none; }
+    .bienvenida-nav { min-height: 3.8rem; }
+    .bienvenida-marca { font-size: .98rem; }
+    .bienvenida-marca > span:first-child { width: 1.65rem; height: 1.65rem; margin: 0; }
+    .bienvenida-nav-enlaces { font-size: .78rem; }
+    .bienvenida-nav-enlaces .bienvenida-boton { padding: .4rem .5rem; }
+}

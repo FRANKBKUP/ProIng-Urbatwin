@@ -14,6 +14,7 @@ class MapaApiController extends Controller
     public function zonas()
     {
         $filas = DB::select('SELECT id, nombre, ST_AsGeoJSON(limite) AS g FROM zonas');
+
         return response()->json(array_map(fn ($f) => [
             'id' => $f->id,
             'nombre' => $f->nombre,
@@ -30,6 +31,7 @@ class MapaApiController extends Controller
              WHERE i.zona_id = ? AND i.activo = 1',
             [$id]
         );
+
         return response()->json([
             'type' => 'FeatureCollection',
             'features' => array_map(
@@ -44,7 +46,7 @@ class MapaApiController extends Controller
         return response()->json(
             DB::table('escenarios')
                 ->where('zona_id', $id)->where('activo', 1)
-                ->orderByRaw("FIELD(nivel, 'leve', 'moderado', 'extremo')")
+                ->orderByRaw("CASE nivel WHEN 'leve' THEN 1 WHEN 'moderado' THEN 2 WHEN 'extremo' THEN 3 END")
                 ->get(['id', 'nombre', 'nivel', 'origen'])
         );
     }
@@ -56,7 +58,7 @@ class MapaApiController extends Controller
              FROM escenarios WHERE id = ? AND activo = 1',
             [$id]
         );
-        abort_if(!$e, 404, 'Escenario no encontrado');
+        abort_if(! $e, 404, 'Escenario no encontrado');
 
         return response()->json($this->feature($e->g, [
             'id' => $e->id, 'nombre' => $e->nombre, 'nivel' => $e->nivel, 'origen' => $e->origen,
@@ -65,7 +67,7 @@ class MapaApiController extends Controller
 
     public function exposicion(int $id)
     {
-        abort_if(!DB::table('escenarios')->where('id', $id)->where('activo', 1)->exists(), 404, 'Escenario no encontrado');
+        abort_if(! DB::table('escenarios')->where('id', $id)->where('activo', 1)->exists(), 404, 'Escenario no encontrado');
 
         // El cruce espacial del sistema (RF09 / RN04)
         $filas = DB::select(
@@ -74,7 +76,7 @@ class MapaApiController extends Controller
              JOIN tipos_infraestructura t ON t.id = i.tipo_id
              JOIN escenarios e ON e.zona_id = i.zona_id
              WHERE e.id = ? AND i.activo = 1
-               AND ST_Intersects(i.geometria, e.area_inundada) = 1',
+               AND ST_Intersects(i.geometria, e.area_inundada)',
             [$id]
         );
 

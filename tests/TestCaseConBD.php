@@ -8,20 +8,21 @@ use Illuminate\Support\Facades\DB;
 
 abstract class TestCaseConBD extends TestCase
 {
-    use DatabaseTransactions; // cada prueba se revierte al terminar
+    use DatabaseTransactions {
+        beginDatabaseTransaction as private abrirTransaccion;
+    }
 
     private ?User $adminBase = null;
 
-    protected function setUp(): void
+    public function beginDatabaseTransaction(): void
     {
-        parent::setUp();
-
-        $bd = (string) config('database.connections.' . config('database.default') . '.database');
-        if (!str_ends_with($bd, '_test')) {
-            throw new \RuntimeException(
-                "PELIGRO: las pruebas deben usar una base cuyo nombre termine en _test (actual: '$bd'). Revisa phpunit.xml."
-            );
+        $conexion = config('database.connections.pgsql');
+        if (config('database.default') !== 'pgsql' || $conexion['database'] !== 'urbantwin_v2_test'
+            || filled($conexion['url']) || $conexion['host'] !== '127.0.0.1') {
+            throw new \RuntimeException('La suite requiere la base PostGIS local aislada urbantwin_v2_test.');
         }
+
+        $this->abrirTransaccion();
     }
 
     // Rectángulo en WKT. Orden: LONGITUD LATITUD.
@@ -33,7 +34,7 @@ abstract class TestCaseConBD extends TestCase
     protected function rolId(string $rol): int
     {
         $id = DB::table('roles')->where('nombre', $rol)->value('id');
-        $this->assertNotNull($id, "Falta el rol '$rol' en la BD de pruebas: ejecuta el INSERT de roles del script.");
+        $this->assertNotNull($id, "Falta el rol '$rol' en la BD de pruebas: ejecuta las migraciones.");
 
         return (int) $id;
     }
@@ -42,7 +43,7 @@ abstract class TestCaseConBD extends TestCase
     {
         return User::create([
             'nombre' => "Test $rol",
-            'email' => uniqid(strtolower($rol) . '_') . '@test.local',
+            'email' => uniqid(strtolower($rol).'_').'@test.local',
             'password' => 'Clave12345!',
             'rol_id' => $this->rolId($rol),
             'activo' => $activo,
@@ -57,7 +58,7 @@ abstract class TestCaseConBD extends TestCase
     protected function zona(?string $wkt = null): int
     {
         DB::insert(
-            'INSERT INTO zonas (nombre, limite) VALUES (?, ST_GeomFromText(?))',
+            'INSERT INTO zonas (nombre, limite) VALUES (?, ST_GeomFromText(?, 4326))',
             ['Zona de prueba', $wkt ?? self::caja(0, 0, 10, 10)]
         );
 
@@ -68,7 +69,7 @@ abstract class TestCaseConBD extends TestCase
     {
         DB::insert(
             "INSERT INTO escenarios (zona_id, creado_por, nombre, nivel, origen, area_inundada)
-             VALUES (?, ?, ?, ?, 'simulado', ST_GeomFromText(?))",
+             VALUES (?, ?, ?, ?, 'simulado', ST_GeomFromText(?, 4326))",
             [$zona, $this->admin()->id, $nombre, $nivel, $wkt]
         );
 
@@ -82,7 +83,7 @@ abstract class TestCaseConBD extends TestCase
 
         DB::insert(
             'INSERT INTO infraestructuras (zona_id, tipo_id, nombre, geometria)
-             VALUES (?, ?, ?, ST_GeomFromText(?))',
+             VALUES (?, ?, ?, ST_GeomFromText(?, 4326))',
             [$zona, $tipoId, $nombre, $wkt]
         );
 

@@ -19,6 +19,9 @@
         @case('usuarios')
             <circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5a3 3 0 0 1 0 6M18 14c1.8.7 3 2.5 3 4.5"/>
             @break
+        @case('persona')
+            <circle cx="12" cy="7" r="3.25"/><path d="M5 21v-2.5a7 7 0 0 1 14 0V21"/>
+            @break
         @case('salir')
             <path d="M10 4H5v16h5"/><path d="M14 8l4 4-4 4M18 12H9"/>
             @break

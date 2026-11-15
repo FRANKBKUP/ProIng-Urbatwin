@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"nombre": "Polígono A"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-81.273,-4.584],[-81.271,-4.584],[-81.271,-4.576],[-81.273,-4.576],[-81.273,-4.584]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"nombre": "Polígono B"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-81.272,-4.584],[-81.270,-4.584],[-81.270,-4.576],[-81.272,-4.576],[-81.272,-4.584]]]}
+    }
+  ]
+}

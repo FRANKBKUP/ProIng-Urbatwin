@@ -10,9 +10,7 @@ class InfraestructuraImportService
 {
     private const MAX_ELEMENTOS = 5000;
 
-    public function __construct(private GeoJsonService $geo)
-    {
-    }
+    public function __construct(private GeoJsonService $geo) {}
 
     /**
      * @return array{insertados:int, omitidos:int, motivos:string[]}
@@ -20,11 +18,11 @@ class InfraestructuraImportService
     public function importar(string $texto, int $zonaId, int $tipoId): array
     {
         $dato = json_decode($texto, true);
-        if (!is_array($dato) || ($dato['type'] ?? null) !== 'FeatureCollection' || !is_array($dato['features'] ?? null)) {
+        if (! is_array($dato) || ($dato['type'] ?? null) !== 'FeatureCollection' || ! is_array($dato['features'] ?? null)) {
             throw new InvalidArgumentException('El archivo debe ser un GeoJSON de tipo FeatureCollection.');
         }
         if (count($dato['features']) > self::MAX_ELEMENTOS) {
-            throw new InvalidArgumentException('Máximo ' . self::MAX_ELEMENTOS . ' elementos por archivo.');
+            throw new InvalidArgumentException('Máximo '.self::MAX_ELEMENTOS.' elementos por archivo.');
         }
 
         $res = ['insertados' => 0, 'omitidos' => 0, 'motivos' => []];
@@ -41,30 +39,31 @@ class InfraestructuraImportService
                         'SELECT ST_Intersects(ST_GeomFromGeoJSON(?), limite) AS ok FROM zonas WHERE id = ?',
                         [$geom, $zonaId]
                     );
-                    if (!$dentro || !$dentro->ok) {
+                    if (! $dentro || ! $dentro->ok) {
                         throw new InvalidArgumentException('queda fuera de la zona elegida.');
                     }
 
                     $props = $f['properties'] ?? [];
                     $nombre = trim((string) ($props['nombre'] ?? $props['name'] ?? '')) ?: "Sin nombre $n";
 
-                    DB::insert(
+                    DB::transaction(fn () => DB::insert(
                         'INSERT INTO infraestructuras (zona_id, tipo_id, nombre, geometria)
                          VALUES (?, ?, ?, ST_GeomFromGeoJSON(?))',
                         [$zonaId, $tipoId, mb_substr($nombre, 0, 120), $geom]
-                    );
+                    ));
                     $res['insertados']++;
                 } catch (InvalidArgumentException $e) {
                     $res['omitidos']++;
-                    $res['motivos'][] = "Elemento $n: " . $e->getMessage();
+                    $res['motivos'][] = "Elemento $n: ".$e->getMessage();
                 } catch (QueryException) {
                     $res['omitidos']++;
-                    $res['motivos'][] = "Elemento $n: MariaDB no pudo interpretar la geometría.";
+                    $res['motivos'][] = "Elemento $n: la base espacial no pudo interpretar la geometría.";
                 }
             }
         });
 
         $res['motivos'] = array_slice($res['motivos'], 0, 20); // no inundar la pantalla
+
         return $res;
     }
 }

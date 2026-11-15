@@ -18,7 +18,7 @@ class AccesoPorRolTest extends TestCaseConBD
         $u = $this->usuario('Analista');
 
         $this->post('/login', ['email' => $u->email, 'password' => 'Clave12345!'])
-            ->assertRedirect('/mapa');
+            ->assertRedirect('/visor');
 
         $this->assertAuthenticatedAs($u);
     }

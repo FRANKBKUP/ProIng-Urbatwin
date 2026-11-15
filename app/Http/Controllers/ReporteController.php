@@ -16,7 +16,7 @@ class ReporteController extends Controller
     public function guardar(Request $request, int $id)
     {
         abort_if(
-            !DB::table('escenarios')->where('id', $id)->where('activo', 1)->exists(),
+            ! DB::table('escenarios')->where('id', $id)->where('activo', 1)->exists(),
             404, 'Escenario no encontrado'
         );
 
@@ -27,7 +27,7 @@ class ReporteController extends Controller
              JOIN tipos_infraestructura t ON t.id = i.tipo_id
              JOIN escenarios e ON e.zona_id = i.zona_id
              WHERE e.id = ? AND i.activo = 1
-               AND ST_Intersects(i.geometria, e.area_inundada) = 1',
+               AND ST_Intersects(i.geometria, e.area_inundada)',
             [$id]
         );
 
@@ -59,14 +59,15 @@ class ReporteController extends Controller
 
     public function index()
     {
-        $reportes = DB::select(self::CONSULTA_REPORTE . ' ORDER BY r.id DESC');
+        $reportes = DB::select(self::CONSULTA_REPORTE.' ORDER BY r.id DESC');
+
         return view('reportes.index', compact('reportes'));
     }
 
     public function mostrar(int $id)
     {
-        $r = DB::selectOne(self::CONSULTA_REPORTE . ' WHERE r.id = ?', [$id]);
-        abort_if(!$r, 404, 'Reporte no encontrado');
+        $r = DB::selectOne(self::CONSULTA_REPORTE.' WHERE r.id = ?', [$id]);
+        abort_if(! $r, 404, 'Reporte no encontrado');
 
         $detalles = DB::table('reporte_detalles')
             ->where('reporte_id', $id)

@@ -15,14 +15,24 @@ class DemoGeoSeeder extends Seeder
 
     public function run(): void
     {
+        if (! app()->environment('local', 'testing')) {
+            throw new \RuntimeException('El seeder de Talara solo se ejecuta en local o testing.');
+        }
+
         if (DB::table('zonas')->exists()) {
             return; // evita duplicar datos si lo ejecutas dos veces
         }
 
+        DB::transaction(fn () => $this->cargarTalara());
+    }
+
+    private function cargarTalara(): void
+    {
+        $sqlWkt = DB::getDriverName() === 'pgsql' ? 'ST_GeomFromText(?, 4326)' : 'ST_GeomFromText(?)';
         DB::insert(
-            'INSERT INTO zonas (nombre, descripcion, limite) VALUES (?, ?, ST_GeomFromText(?))',
+            "INSERT INTO zonas (nombre, descripcion, limite) VALUES (?, ?, $sqlWkt)",
             ['Zona piloto (demo)', 'Zona de demostración cerca de Talara; coordenadas ficticias',
-             $this->caja(-81.285, -4.595, -81.255, -4.565)]
+                $this->caja(-81.285, -4.595, -81.255, -4.565)]
         );
         $zona = DB::table('zonas')->orderByDesc('id')->value('id');
         $admin = DB::table('usuarios')->where('email', 'admin@urbantwin.test')->value('id');
@@ -36,7 +46,7 @@ class DemoGeoSeeder extends Seeder
         foreach ($escenarios as [$nombre, $nivel, $wkt]) {
             DB::insert(
                 "INSERT INTO escenarios (zona_id, creado_por, nombre, nivel, origen, area_inundada)
-                 VALUES (?, ?, ?, ?, 'simulado', ST_GeomFromText(?))",
+                 VALUES (?, ?, ?, ?, 'simulado', $sqlWkt)",
                 [$zona, $admin, $nombre, $nivel, $wkt]
             );
         }
@@ -55,11 +65,11 @@ class DemoGeoSeeder extends Seeder
             ['Vía',             'Vía ejemplo B',           'LINESTRING(-81.2625 -4.570,-81.2625 -4.576)'],
             ['Vía',             'Vía ejemplo C',           'LINESTRING(-81.284 -4.566,-81.255 -4.566)'],
         ];
-        foreach ($infra as [$t, $nombre, $wkt]) {
+        foreach ($infra as [$t, $nombre, $geometria]) {
             DB::insert(
-                'INSERT INTO infraestructuras (zona_id, tipo_id, nombre, geometria)
-                 VALUES (?, ?, ?, ST_GeomFromText(?))',
-                [$zona, $tipo($t), $nombre, $wkt]
+                "INSERT INTO infraestructuras (zona_id, tipo_id, nombre, geometria)
+                 VALUES (?, ?, ?, $sqlWkt)",
+                [$zona, $tipo($t), $nombre, $geometria]
             );
         }
     }

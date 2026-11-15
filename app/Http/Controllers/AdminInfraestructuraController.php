@@ -15,8 +15,7 @@ class AdminInfraestructuraController extends Controller
     public function __construct(
         private GeoJsonService $geo,
         private InfraestructuraImportService $importador,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request)
     {
@@ -54,9 +53,8 @@ class AdminInfraestructuraController extends Controller
                 'SELECT ST_Intersects(ST_GeomFromGeoJSON(?), limite) AS ok FROM zonas WHERE id = ?',
                 [$geom, $d['zona_id']]
             );
-            if (!$dentro || !$dentro->ok) {
-                return back()->withErrors(['geojson' =>
-                    'La ubicación queda fuera de la zona elegida. ¿Invertiste latitud y longitud?'
+            if (! $dentro || ! $dentro->ok) {
+                return back()->withErrors(['geojson' => 'La ubicación queda fuera de la zona elegida. ¿Invertiste latitud y longitud?',
                 ])->withInput();
             }
 
@@ -68,8 +66,7 @@ class AdminInfraestructuraController extends Controller
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['geojson' => $e->getMessage()])->withInput();
         } catch (QueryException) {
-            return back()->withErrors(['geojson' =>
-                'MariaDB no pudo interpretar la geometría. Revisa el GeoJSON.'
+            return back()->withErrors(['geojson' => 'La base espacial no pudo interpretar la geometría. Revisa el GeoJSON.',
             ])->withInput();
         }
 
@@ -84,7 +81,7 @@ class AdminInfraestructuraController extends Controller
             'tipo_id' => ['required', 'integer', 'exists:tipos_infraestructura,id'],
         ], [
             'archivo.required' => 'Selecciona un archivo .geojson.',
-            'archivo.max'      => 'El archivo no puede pasar de 5 MB.',
+            'archivo.max' => 'El archivo no puede pasar de 5 MB.',
         ]);
 
         try {
@@ -113,8 +110,7 @@ class AdminInfraestructuraController extends Controller
     {
         // reporte_detalles referencia a la infraestructura: si aparece en reportes, solo se desactiva
         if (DB::table('reporte_detalles')->where('infraestructura_id', $id)->exists()) {
-            return back()->withErrors(['infraestructura' =>
-                'Esta infraestructura aparece en reportes guardados: no se elimina, solo se desactiva.'
+            return back()->withErrors(['infraestructura' => 'Esta infraestructura aparece en reportes guardados: no se elimina, solo se desactiva.',
             ]);
         }
 

@@ -10,6 +10,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment('local', 'testing')) {
+            throw new \RuntimeException('Las cuentas de demostración solo se crean en local o testing.');
+        }
+
         $usuarios = [
             ['Administrador', 'admin@urbantwin.test'],
             ['Analista', 'analista@urbantwin.test'],
@@ -17,9 +21,9 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($usuarios as [$rol, $email]) {
-            DB::table('usuarios')->updateOrInsert(
-                ['email' => $email],
+            DB::table('usuarios')->insertOrIgnore(
                 [
+                    'email' => $email,
                     'nombre' => "Usuario $rol",
                     'password' => Hash::make('Cambiar123!'),
                     'rol_id' => DB::table('roles')->where('nombre', $rol)->value('id'),
@@ -30,5 +34,8 @@ class DatabaseSeeder extends Seeder
             );
         }
         $this->call(DemoGeoSeeder::class);
+        if (DB::getDriverName() === 'pgsql') {
+            $this->call(DemoVersionadaSeeder::class);
+        }
     }
 }

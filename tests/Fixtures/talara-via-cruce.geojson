@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"nombre": "Vía de cruce"},
+      "geometry": {"type": "LineString", "coordinates": [[-81.275,-4.580],[-81.268,-4.580]]}
+    }
+  ]
+}

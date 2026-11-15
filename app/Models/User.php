@@ -8,7 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class User extends Authenticatable
 {
     protected $table = 'usuarios';
+
     protected $fillable = ['nombre', 'email', 'password', 'rol_id', 'activo'];
+
     protected $hidden = ['password'];
 
     protected function casts(): array
@@ -23,7 +25,10 @@ class User extends Authenticatable
 
     public function tieneRol(string ...$roles): bool
     {
-        return in_array($this->rol->nombre, $roles, true);
+        $nombre = $this->rol?->nombre;
+
+        return $this->activo && (in_array($nombre, $roles, true)
+            || ($nombre === 'Superusuario' && array_intersect($roles, ['Administrador', 'Analista', 'Consulta']) !== []));
     }
 
     // Nuestra tabla no tiene remember_token; esto evita que Laravel lo busque.
