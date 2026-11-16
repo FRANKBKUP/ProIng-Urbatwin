@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: urbantwin-peru
+    runtime: docker
+    plan: free
+    region: ohio
+    healthCheckPath: /up
+    envVars:
+      - key: LARAVEL_KEY_BASE64
+        generateValue: true
+      - key: APP_NAME
+        value: UrbanTwin
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_LOCALE
+        value: es
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: URBANTWIN_MOSTRAR_SIMULACIONES
+        value: "false"
+      - key: URBANTWIN_MOSTRAR_PERFILES_DEMO
+        value: "false"

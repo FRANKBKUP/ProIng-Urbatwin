@@ -1,5 +1,25 @@
 # Operación, copias y transición
 
+## Publicación del visor ciudadano
+
+El [Blueprint de Render](../render.yaml) compila Laravel y Vite en un contenedor y permite levantar el servicio web con el plan gratuito de Render. Crea un proyecto propio de Neon con PostgreSQL 17 en la región de Ohio y configura en Render `DB_URL` con la conexión directa de esa base nueva, con `sslmode=require`. Render genera la clave de la aplicación. El contenedor ejecuta las migraciones y verifica el arranque en `/up`.
+
+Para preparar el atlas desde la base local de UrbanTwin, exporta únicamente estas tablas, con las herramientas PostgreSQL en `PATH`:
+
+~~~powershell
+pg_dump -h 127.0.0.1 -p 55432 -U urbantwin -d urbantwin_v2_dev -Fc --data-only -t geo.departamentos -t geo.provincias -t geo.temas -t geo.zonas_tematicas -f atlas-publico.dump
+~~~
+
+Después del primer arranque de Render, configura las credenciales de **la base de Neon** en tu cliente PostgreSQL. Restaura en la base recién migrada:
+
+~~~powershell
+pg_restore --no-owner --no-privileges --single-transaction --exit-on-error -d urbantwin_web atlas-publico.dump
+~~~
+
+El comando supone que la base se llama `urbantwin_web` y que el cliente ya conoce el host, el usuario y la configuración SSL de Neon. El respaldo contiene solo departamentos, provincias y capas temáticas. El registro ciudadano crea cuentas nuevas en la base pública.
+
+El plan gratuito de Render suspende el servicio por inactividad y su sistema de archivos es efímero. La publicación de otras capas con archivos descargables y la administración de cargas requieren almacenamiento privado persistente. [Render gratuito](https://render.com/docs/free) · [PostGIS en Neon](https://neon.com/docs/extensions/postgis).
+
 ## Despliegue propuesto
 
 GitHub puede alojar el repositorio y GitHub Pages puede publicar la documentación estática. Para un enlace que permita al profesor iniciar sesión, usar el visor y consultar los datos, instala la aplicación en un servidor web con PHP y PostgreSQL/PostGIS. Puedes usar un servidor de la universidad o un VPS Linux. [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site) · [Despliegue de Laravel 13](https://laravel.com/docs/13.x/deployment).
