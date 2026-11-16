@@ -185,7 +185,7 @@ td:last-child { white-space: normal; }
     .atlas-galeria, .perfil-layout { grid-template-columns: 1fr; }
     .atlas-chart-layout { grid-template-columns: minmax(6rem, 8rem) minmax(0, 1fr); gap: .7rem; }
     .workbar { gap: .45rem; padding-inline: .65rem; }
-    .cuerpo { padding: .75rem; }
+    .cuerpo { padding: .75rem; overflow-x: clip; }
     .panel, .territorio-hero { padding: .85rem; }
     .cuerpo :is(.btn, .btn-sec) { max-width: 100%; padding-inline: .75rem; text-align: center; }
     .cuerpo :is(input, select, textarea), .territorio-auth-form :is(input, select, textarea) { font-size: 1rem; }

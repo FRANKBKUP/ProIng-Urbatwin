@@ -7,7 +7,7 @@
     <title>@yield('titulo') · UrbanTwin</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="{{ asset('css/urbantwin.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/territorio.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/territorio.css') }}?v={{ filemtime(public_path('css/territorio.css')) }}">
     <script src="{{ asset('js/territorio.js') }}"></script>
     @stack('estilos')
 </head>

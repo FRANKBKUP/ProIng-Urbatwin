@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('titulo') · UrbanTwin Perú</title>
     <link rel="stylesheet" href="{{ asset('css/urbantwin.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/territorio.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/territorio.css') }}?v={{ filemtime(public_path('css/territorio.css')) }}">
     <script src="{{ asset('js/territorio.js') }}"></script>
 </head>
 <body class="territorio-auth">
