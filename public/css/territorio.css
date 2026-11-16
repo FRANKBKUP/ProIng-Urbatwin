@@ -116,7 +116,7 @@
 .avatar-grande { width: 4rem; height: 4rem; font-size: 1.5rem; }
 .cuerpo { max-width: 1500px; overflow-wrap: anywhere; }
 .cuerpo :is(.panel, .formulario, fieldset) { min-width: 0; }
-.tabla-wrap, .territorio-tabla { max-width: 100%; overflow-x: auto; }
+.tabla-wrap, .territorio-tabla { position: relative; max-width: 100%; overflow-x: auto; }
 .tabla-wrap:focus-visible { outline-offset: -2px; }
 td:last-child { white-space: normal; }
 .territorio-hero, .territorio-metricas > *, .territorio-auth-layout, .perfil-layout section { background: var(--atlas-superficie); border-color: var(--atlas-borde); color: var(--atlas-tinta); }
