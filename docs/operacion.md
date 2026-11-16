@@ -2,7 +2,7 @@
 
 ## Publicación del visor ciudadano
 
-El [Blueprint de Render](../render.yaml) compila Laravel y Vite en un contenedor y permite levantar el servicio web con el plan gratuito de Render. Crea un proyecto propio de Neon con PostgreSQL 17 en la región de Ohio y configura en Render `DB_URL` con la conexión directa de esa base nueva, con `sslmode=require`. Render genera la clave de la aplicación. El contenedor ejecuta las migraciones y verifica el arranque en `/up`.
+El [visor ciudadano público](https://urbantwin-peru.onrender.com/) usa el plan gratuito de Render con PostgreSQL 18 y PostGIS 3.6.4 en Neon. El [Blueprint](../render.yaml) compila Laravel y Vite en un contenedor. Render genera la clave de la aplicación y usa `DB_URL` con la conexión directa de Neon, con `sslmode=require`. El contenedor ejecuta las migraciones y verifica el arranque en `/up`.
 
 Para preparar el atlas desde la base local de UrbanTwin, exporta únicamente estas tablas, con las herramientas PostgreSQL en `PATH`:
 
@@ -13,10 +13,10 @@ pg_dump -h 127.0.0.1 -p 55432 -U urbantwin -d urbantwin_v2_dev -Fc --data-only -
 Después del primer arranque de Render, configura las credenciales de **la base de Neon** en tu cliente PostgreSQL. Restaura en la base recién migrada:
 
 ~~~powershell
-pg_restore --no-owner --no-privileges --single-transaction --exit-on-error -d urbantwin_web atlas-publico.dump
+pg_restore --no-owner --no-privileges --single-transaction --exit-on-error -d neondb atlas-publico.dump
 ~~~
 
-El comando supone que la base se llama `urbantwin_web` y que el cliente ya conoce el host, el usuario y la configuración SSL de Neon. El respaldo contiene solo departamentos, provincias y capas temáticas. El registro ciudadano crea cuentas nuevas en la base pública.
+El comando supone que el cliente ya conoce el host, el usuario y la configuración SSL de Neon. Se verificó con 196 provincias, cuatro capas de riesgo y precipitación y una consulta en Sullana. El registro ciudadano crea cuentas nuevas en la base pública.
 
 El plan gratuito de Render suspende el servicio por inactividad y su sistema de archivos es efímero. La publicación de otras capas con archivos descargables y la administración de cargas requieren almacenamiento privado persistente. [Render gratuito](https://render.com/docs/free) · [PostGIS en Neon](https://neon.com/docs/extensions/postgis).
 
