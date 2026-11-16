@@ -7,6 +7,7 @@
         <p><a class="btn-sec" href="{{ route('geo.superusuarios.index') }}">Administrar superusuarios</a></p>
     @endif
 
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Activo</th><th></th></tr>
         @foreach($usuarios as $u)
@@ -35,6 +36,7 @@
             </tr>
         @endforeach
     </table>
+    </div>
 
     @foreach($usuarios as $u)
         <form id="uf{{ $u->id }}" method="POST" action="{{ route('admin.usuarios.update', $u->id) }}">

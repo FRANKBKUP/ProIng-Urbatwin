@@ -31,6 +31,7 @@
         <button class="btn">Filtrar</button>
     </form>
 
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th>Nombre</th><th>Tipo</th><th>Zona</th><th>Geometría</th><th>Estado</th><th>En reportes</th><th>Acciones</th></tr>
         @forelse($infra as $i)
@@ -57,6 +58,7 @@
             <tr><td colspan="7">No hay infraestructura con esos filtros.</td></tr>
         @endforelse
     </table>
+    </div>
 
     <p>
         @if($infra->previousPageUrl()) <a href="{{ $infra->previousPageUrl() }}">« Anterior</a> @endif

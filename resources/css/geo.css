@@ -112,7 +112,22 @@
 .atlas-avatar.atlas-avatar-grupo { width: auto; border-radius: 1.2rem; padding: 0 .55rem; }
 .atlas-avatar svg { flex: 0 0 auto; width: .9rem; height: .9rem; }
 @media (max-width: 880px) {
-    .geo-workspace { grid-template-columns: 1fr; }
+    .geo-workspace, .geo-workspace.geo-workspace-ampliado { grid-template-columns: minmax(0, 1fr); }
     .geo-viewport, .geo-panel { height: auto; max-height: none; }
-    .geo-viewport { height: max(26rem, 61vh); }
+    .geo-viewport { height: clamp(19rem, 56svh, 32rem); }
+    .geo-panel { min-width: 0; overflow: visible; }
+}
+[data-tema="oscuro"] .geo-result[data-estado] { background: var(--atlas-destacado); color: var(--atlas-tinta); }
+[data-tema="oscuro"] .geo-result[data-estado="error"] { background: var(--err-fondo); color: var(--err-texto); }
+.atlas-dialogo { max-height: 85dvh; overflow: auto; }
+@media (max-width: 550px) {
+    .geo-map-tools { right: 3rem; left: .35rem; top: .35rem; gap: .25rem; max-width: calc(100% - 3.35rem); }
+    .geo-map-tools select, .geo-map-tools .btn-sec { min-height: 2.65rem; }
+    .geo-map-tools select { min-width: 0; max-width: 100%; }
+    .geo-legend { left: .35rem; max-width: calc(100% - 1.8rem); padding: .3rem .45rem; }
+    .geo-mapa-estado { top: auto; bottom: 5.5rem; }
+    .geo-panel { padding: .75rem; }
+}
+@media (max-width: 375px) {
+    .geo-navegacion > .geo-coords, .geo-acciones { grid-template-columns: minmax(0, 1fr); }
 }

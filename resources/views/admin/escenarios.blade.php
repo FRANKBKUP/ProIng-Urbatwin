@@ -4,6 +4,7 @@
 @section('contenido')
     <h1>Gestión de escenarios</h1>
 
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th>Nombre</th><th>Zona</th><th>Nivel</th><th>Origen</th><th>Estado</th><th>Reportes</th><th>Acciones</th></tr>
         @foreach($escenarios as $e)
@@ -28,6 +29,7 @@
             </tr>
         @endforeach
     </table>
+    </div>
 
     <h2>Nuevo escenario</h2>
     <form method="POST" action="{{ route('admin.escenarios.store') }}" class="formulario">

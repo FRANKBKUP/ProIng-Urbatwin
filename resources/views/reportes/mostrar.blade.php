@@ -25,20 +25,24 @@
     </div>
 
     <h2 style="margin-top:8px">Resumen por tipo</h2>
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th>Tipo</th><th class="num">Cantidad</th></tr>
         @foreach($porTipo as $tipo => $n)
             <tr><td>{{ $tipo }}</td><td class="num">{{ $n }}</td></tr>
         @endforeach
     </table>
+    </div>
 
     <h2>Detalle</h2>
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th>Infraestructura</th><th>Tipo</th></tr>
         @foreach($detalles as $d)
             <tr><td>{{ $d->nombre_infra }}</td><td>{{ $d->tipo_infra }}</td></tr>
         @endforeach
     </table>
+    </div>
 
     @if($r->origen === 'simulado')
         <p class="muted"><em>Este reporte se basa en un escenario simulado de demostración; no debe usarse para decisiones reales.</em></p>

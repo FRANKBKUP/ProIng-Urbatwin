@@ -4,6 +4,7 @@
 @section('contenido')
     <h1>Gestión de zonas</h1>
 
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th>Nombre</th><th>Descripción</th><th>Infraestructuras</th><th>Escenarios</th><th>Acciones</th></tr>
         @foreach($zonas as $z)
@@ -23,6 +24,7 @@
             </tr>
         @endforeach
     </table>
+    </div>
 
     <h2>Nueva zona</h2>
     <form method="POST" action="{{ route('admin.zonas.store') }}" class="formulario">

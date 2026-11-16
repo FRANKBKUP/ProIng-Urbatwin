@@ -17,6 +17,7 @@
         </div>
     </div>
 
+    <div class="tabla-wrap" tabindex="0" role="region" aria-label="Datos de la tabla">
     <table>
         <tr><th class="num">N.º</th><th>Escenario</th><th class="num">Expuestas</th><th>Generado por</th><th>Fecha</th><th></th></tr>
         @forelse($lista as $r)
@@ -32,4 +33,5 @@
             <tr><td colspan="6">Aún no hay reportes. Genera uno desde el mapa.</td></tr>
         @endforelse
     </table>
+    </div>
 @endsection
