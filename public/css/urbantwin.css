@@ -1,15 +1,15 @@
 /* ===== UrbanTwin · sistema de diseño (Clean civic dashboard) ===== */
 :root {
-    --bg: #F3F5F7;
+    --bg: #F8FAFC;
     --superficie: #FFFFFF;
-    --borde: #D8DEE4;
+    --borde: #E2E8F0;
     --borde-input: #7C8E9B;
-    --tinta: #15222B;
-    --suave: #5B6B76;
-    --primario: #0A5A9C;
-    --primario-osc: #084B82;
-    --primario-claro: #EAF3FB;
-    --lateral: #0F2430;
+    --tinta: #0F172A;
+    --suave: #475569;
+    --primario: #095FA9;
+    --primario-osc: #0056A2;
+    --primario-claro: #EAF5FC;
+    --lateral: #16223B;
     --lateral-texto: #C9D6DE;
     --lateral-suave: #8FA5B3;
     --expuesto: #C2410C;

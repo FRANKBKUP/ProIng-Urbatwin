@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{ asset('img/icono.png') }}">
     <meta name="description" content="UrbanTwin Perú es un atlas territorial para consultar escenarios oficiales de riesgo, lluvias históricas y observaciones de inundación.">
     <title>UrbanTwin Perú · Atlas de lluvias y riesgo territorial</title>
     <link rel="stylesheet" href="{{ asset('css/bienvenida.css') }}">

@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="{{ asset('img/icono.png') }}">
     <title>{{ $titulo }} · UrbanTwin</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Sora:wght@600;700&display=swap">
     <link rel="stylesheet" href="{{ asset('css/urbantwin.css') }}">

@@ -25,13 +25,14 @@
 .codigo-invitacion { display: block; width: min(100%, 27rem); font-family: ui-monospace, monospace; margin-top: .6rem; }
 .territorio-auth { min-height: 100vh; display: grid; place-items: center; padding: 1.25rem; background: #e9f0f4; }
 .territorio-auth-layout { display: grid; grid-template-columns: 1.1fr 1fr; width: min(64rem, 100%); margin: auto; overflow: hidden; background: #fff; border: 1px solid #dae6ed; border-radius: 1.25rem; box-shadow: 0 20px 54px #09344416; }
-.territorio-auth-contexto { display: grid; align-content: space-between; min-height: 32rem; padding: clamp(1.5rem, 4vw, 3.8rem); color: #f0f9fc; background: radial-gradient(at 90% 75%, #1b6c76, transparent 62%), #102f40; }
+.territorio-auth-contexto { display: grid; align-content: space-between; min-height: 32rem; padding: clamp(1.5rem, 4vw, 3.8rem); color: #fff; background: radial-gradient(at 90% 75%, #398ec9, transparent 62%), #0056A2; }
 .territorio-auth-contexto h1 { margin: .45rem 0 1rem; font-size: clamp(2rem, 4vw, 3.4rem); max-width: 11ch; line-height: 1.04; }
 .territorio-auth-contexto p { max-width: 31ch; }
-.territorio-auth-contexto .territorio-localidad { color: #a4e6e2; }
+.territorio-auth-contexto .territorio-localidad { color: #fff; }
 .territorio-auth-marca { color: #f0f9fc; font-size: 1.12rem; font-weight: 700; display: flex; align-items: center; gap: .55rem; text-decoration: none; }
-.territorio-auth-marca:hover { color: #a4e6e2; }
+.territorio-auth-marca:hover { color: #fff; text-decoration: underline; }
 .territorio-auth-form { padding: clamp(1.5rem, 4vw, 3.8rem); align-self: center; }
+.territorio-login-imagen { display: block; width: 100%; height: auto; margin: 1rem auto 2rem; }
 .territorio-auth-form .formulario { padding: 0; border: 0; background: transparent; }
 .territorio-auth-form .formulario h2 { margin: 0 0 .7rem; font-size: 1.65rem; color: #123247; }
 .territorio-auth-form .btn { margin-top: .55rem; }
@@ -47,11 +48,11 @@
 
 :root {
     --atlas-superficie: #fff;
-    --atlas-acento: #087f86;
-    --atlas-tinta: #103449;
+    --atlas-acento: #0056A2;
+    --atlas-tinta: #0f172a;
     --atlas-suave: #466577;
     --atlas-borde: #dce7ee;
-    --atlas-destacado: #edf7fa;
+    --atlas-destacado: #eaf5fc;
 }
 [data-tema="oscuro"] {
     color-scheme: dark;
@@ -61,8 +62,8 @@
     --borde-input: #527383;
     --tinta: #e6f1f7;
     --suave: #aac2cf;
-    --primario: #246594;
-    --primario-osc: #1e5279;
+    --primario: #1d73b6;
+    --primario-osc: #095fa9;
     --primario-claro: #233d52;
     --expuesto: #a5382e;
     --ok-fondo: #17382e;
@@ -75,7 +76,7 @@
     --ambar-texto: #ffe3a7;
     --ambar-borde: #98723b;
     --atlas-superficie: #142738;
-    --atlas-acento: #68ded3;
+    --atlas-acento: #6abee9;
     --atlas-tinta: #e6f1f7;
     --atlas-suave: #b0c6d2;
     --atlas-borde: #2b4659;
@@ -95,19 +96,51 @@
 [data-tema="oscuro"] .btn:disabled { background: #273846; color: #bac9d3; border-color: #527383; }
 [data-tema="oscuro"] .btn-sec.peligro { color: var(--err-texto); border-color: var(--err-borde); }
 [data-tema="oscuro"] input::file-selector-button { color: var(--tinta); border-color: var(--borde-input); }
-[data-tema="oscuro"] :focus-visible { outline-color: #68ded3; }
+[data-tema="oscuro"] :focus-visible { outline-color: #6abee9; }
 [data-tema="oscuro"] th { color: var(--atlas-tinta); background: #22394b; }
 [data-tema="oscuro"] .btn-sec { color: var(--tinta); background: #1d3345; border-color: #527383; }
 [data-tema="oscuro"] .btn-sec:hover, [data-tema="oscuro"] .btn-sec:focus-visible { color: var(--tinta); background: #2b495f; border-color: #88a9ba; }
 [data-tema="oscuro"] .territorio-auth { background: #0c1a28; }
-.lateral { background: linear-gradient(180deg, #10283e, #101e31 77%); }
-.menu-contraido .lateral { display: none; }
+.lateral { width: 280px; background: #16223b; }
+.menu-oculto .lateral { display: none; }
+.lateral-cabecera { display: flex; align-items: center; gap: .5rem; margin-bottom: 1rem; }
+.lateral-cabecera .marca { flex: 1; min-width: 0; margin: 0; justify-content: center; }
+.marca-logo { display: block; width: 100%; max-width: 12rem; height: auto; }
+.marca-icono { display: none; width: 2.5rem; height: 2.5rem; object-fit: contain; }
+.lateral-controles { display: flex; justify-content: flex-end; gap: .25rem; }
+.control-lateral { display: grid; place-items: center; width: 2rem; height: 2rem; padding: 0; border: 0; border-radius: .4rem; color: var(--lateral-texto); background: transparent; cursor: pointer; }
+.control-lateral:hover { color: #fff; background: rgba(255, 255, 255, .12); }
+.usuario-pie { display: flex; align-items: center; gap: .65rem; }
+.usuario-pie .usuario-datos { flex: 1; min-width: 0; }
+.usuario-pie .rol { margin: 0; }
+.usuario-pie .btn-lateral { width: 2.5rem; height: 2.5rem; min-height: 0; padding: 0; justify-content: center; border: 0; }
+.menu-contraido .lateral { width: 68px; padding-inline: 8px; }
+.menu-contraido .marca-logo { display: none; }
+.menu-contraido .marca-icono { display: block; }
+.menu-contraido .lateral-cabecera { flex-direction: column; }
+.menu-contraido .lateral-controles { flex-direction: column; align-items: center; }
+.menu-contraido .enlace { justify-content: center; padding-inline: 0; }
+.menu-contraido .enlace-texto { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.menu-contraido .grupo, .menu-contraido .usuario-datos, .menu-contraido .usuario-pie .aviso { display: none; }
+.menu-contraido .usuario-pie { flex-direction: column; padding: .75rem 0 0; }
+.menu-contraido .btn-lateral { justify-content: center; padding: 0; }
+#mostrar-menu { display: none; }
+.menu-oculto #mostrar-menu { display: inline-grid; }
+@media (max-width: 860px) {
+    .lateral { width: auto; }
+    .menu-contraido .lateral { width: auto; flex-direction: row; }
+    .menu-contraido .lateral-cabecera { display: flex; align-items: center; gap: .5rem; margin: 0; }
+    .menu-contraido .lateral-cabecera .marca { margin: 0; }
+    .menu-contraido .lateral-controles { flex-direction: row; }
+    .menu-contraido .enlace { width: 2.5rem; }
+    .menu-contraido .usuario-pie { flex-direction: row; padding: 0; }
+    .menu-contraido .btn-lateral { width: 2.5rem; }
+}
 .workbar { display: flex; gap: .85rem; align-items: center; min-height: 3.8rem; padding: .4rem .85rem; background: var(--atlas-superficie); border-bottom: 1px solid var(--atlas-borde); }
 .workbar-titulo { flex: 1; min-width: 0; color: var(--atlas-tinta); font-weight: 650; }
 .workbar-perfil { display: inline-flex; gap: .5rem; align-items: center; color: var(--atlas-tinta); font-size: .85rem; font-weight: 650; text-decoration: none; padding: .25rem .4rem; border-radius: .55rem; }
 .workbar-perfil:hover { background: var(--atlas-destacado); color: var(--atlas-tinta); }
-.boton-menu { white-space: nowrap; }
-.boton-menu > span { margin-right: .26rem; }
+.boton-menu { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; flex: 0 0 auto; }
 .avatar-persona { --avatar-fondo: #126899; display: inline-grid; flex: 0 0 auto; place-items: center; width: 2rem; height: 2rem; line-height: 1; border: 2px solid #e9f7fc; background: var(--avatar-fondo); color: #fff; border-radius: 50%; font-size: .77rem; font-weight: 760; }
 .avatar-persona[data-avatar="verde"] { --avatar-fondo: #197b61; }
 .avatar-persona[data-avatar="uva"] { --avatar-fondo: #704396; }
@@ -134,7 +167,7 @@ td:last-child { white-space: normal; }
 .atlas-hero h1 { color: #fff; font-size: clamp(2rem, 4vw, 3rem); }
 .atlas-hero p { color: #e2f5fa; max-width: 58ch; margin-bottom: .6rem; }
 .atlas-hero .territorio-localidad { color: #a5e9e3; font-size: .8rem; letter-spacing: .075em; }
-.atlas-hero .btn { background: #0c7e84; color: #fff; }
+.atlas-hero .btn { background: #095fa9; color: #fff; }
 .atlas-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1rem; }
 .atlas-chart-layout { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr); gap: 1.1rem; align-items: center; margin: .8rem 0 1.1rem; }
 .atlas-donut { aspect-ratio: 1; display: grid; border-radius: 50%; place-items: center; background: var(--atlas-destacado); }

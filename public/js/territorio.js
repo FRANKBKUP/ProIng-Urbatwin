@@ -1,7 +1,12 @@
 (() => {
     const raiz = document.documentElement;
     const preferencia = window.matchMedia('(prefers-color-scheme: dark)');
-    let tema = raiz.dataset.temaCuenta || leer('urbantwin:tema') || 'sistema';
+    const temaCuenta = raiz.dataset.temaCuenta;
+    const claveCuenta = raiz.dataset.usuarioTema ? `urbantwin:tema-cuenta:${raiz.dataset.usuarioTema}` : null;
+    const cuentaAnterior = claveCuenta ? leer(claveCuenta) : null;
+    let tema = cuentaAnterior && cuentaAnterior !== temaCuenta
+        ? temaCuenta
+        : leer('urbantwin:tema') || temaCuenta || 'sistema';
 
     function leer(clave) {
         try { return window.localStorage.getItem(clave); } catch { return null; }
@@ -21,7 +26,10 @@
         }
     }
 
-    if (raiz.dataset.temaCuenta) recordar('urbantwin:tema', tema);
+    if (claveCuenta) {
+        recordar(claveCuenta, temaCuenta);
+        if (cuentaAnterior && cuentaAnterior !== temaCuenta) recordar('urbantwin:tema', tema);
+    }
     aplicar();
     preferencia.addEventListener('change', aplicar);
 
@@ -46,19 +54,39 @@
         });
         document.querySelectorAll('[data-carga-geojson]').forEach(iniciarCargaGeoJson);
 
-        const menu = document.getElementById('alternar-menu');
-        if (menu) {
-            let contraido = (leer('urbantwin:menu') || (innerWidth < 760 ? 'cerrado' : 'abierto')) === 'cerrado';
+        const contraerMenu = document.getElementById('contraer-menu');
+        const ocultarMenu = document.getElementById('ocultar-menu');
+        const mostrarMenu = document.getElementById('mostrar-menu');
+        if (contraerMenu && ocultarMenu && mostrarMenu) {
+            document.querySelectorAll('#menu-principal .enlace').forEach(enlace => {
+                enlace.title = enlace.textContent.trim();
+            });
+            let estadoMenu = leer('urbantwin:menu') || (innerWidth < 760 ? 'oculto' : 'abierto');
+            if (estadoMenu === 'cerrado') estadoMenu = 'oculto';
             const actualizarMenu = () => {
+                const contraido = estadoMenu === 'contraido';
                 raiz.classList.toggle('menu-contraido', contraido);
-                menu.setAttribute('aria-expanded', String(!contraido));
+                raiz.classList.toggle('menu-oculto', estadoMenu === 'oculto');
+                contraerMenu.setAttribute('aria-pressed', String(contraido));
+                contraerMenu.setAttribute('aria-label', contraido ? 'Expandir menú' : 'Contraer menú');
+                contraerMenu.title = contraido ? 'Expandir menú' : 'Contraer menú';
+                recordar('urbantwin:menu', estadoMenu);
+                window.dispatchEvent(new Event('resize'));
             };
             actualizarMenu();
-            menu.addEventListener('click', () => {
-                contraido = !contraido;
-                recordar('urbantwin:menu', contraido ? 'cerrado' : 'abierto');
+            contraerMenu.addEventListener('click', () => {
+                estadoMenu = estadoMenu === 'contraido' ? 'abierto' : 'contraido';
                 actualizarMenu();
-                window.dispatchEvent(new Event('resize'));
+            });
+            ocultarMenu.addEventListener('click', () => {
+                estadoMenu = 'oculto';
+                actualizarMenu();
+                mostrarMenu.focus();
+            });
+            mostrarMenu.addEventListener('click', () => {
+                estadoMenu = 'abierto';
+                actualizarMenu();
+                ocultarMenu.focus();
             });
         }
 

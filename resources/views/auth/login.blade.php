@@ -2,6 +2,7 @@
 @section('titulo', 'Iniciar sesión')
 
 @section('formulario')
+    <img class="territorio-login-imagen" src="{{ asset('img/login.png') }}" alt="UrbanTwin Perú">
     <form class="formulario" method="post" action="{{ route('login') }}">
         @csrf
         <h2>Iniciar sesión</h2>
