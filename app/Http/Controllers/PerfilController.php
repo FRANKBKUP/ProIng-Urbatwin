@@ -8,11 +8,42 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PerfilController extends Controller
 {
+    public function foto(Request $request): StreamedResponse
+    {
+        $ruta = DB::table('app.perfiles')->where('usuario_id', $request->user()->id)->value('foto');
+        abort_unless($ruta && Storage::disk('local')->exists($ruta), 404);
+
+        return Storage::disk('local')->response($ruta, null, ['Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+    }
+
+    public function guardarFoto(Request $request): RedirectResponse
+    {
+        $datos = $request->validate(['foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048']]);
+        $disco = Storage::disk('local');
+        $anterior = DB::table('app.perfiles')->where('usuario_id', $request->user()->id)->value('foto');
+        $ruta = $datos['foto']->store('fotos-perfil', 'local');
+        abort_unless($ruta, 500);
+
+        try {
+            DB::table('app.perfiles')->updateOrInsert(['usuario_id' => $request->user()->id], ['foto' => $ruta, 'actualizado_en' => now()]);
+        } catch (\Throwable $error) {
+            $disco->delete($ruta);
+            throw $error;
+        }
+        if ($anterior) {
+            $disco->delete($anterior);
+        }
+
+        return back()->with('ok', 'Foto de perfil actualizada.');
+    }
+
     public function mostrar(Request $request, AtlasTerritorial $atlas): View
     {
         return view('geo.perfil', [
@@ -69,12 +100,13 @@ class PerfilController extends Controller
     {
         $datos = $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'string', 'min:12', 'max:72', 'confirmed', 'different:current_password'],
+            'password' => ['required', 'string', 'min:12', 'max:72', 'confirmed', 'different:current_password', 'regex:/\p{Lu}/u', 'regex:/\p{Ll}/u', 'regex:/[\p{N}\p{P}\p{S}]/u'],
         ], [
             'current_password.current_password' => 'La contraseña actual es incorrecta.',
             'password.min' => 'Usa al menos 12 caracteres.',
             'password.confirmed' => 'Las contraseñas nuevas deben coincidir.',
             'password.different' => 'Elige una contraseña diferente de la actual.',
+            'password.regex' => 'Incluye mayúsculas, minúsculas y un número o carácter especial.',
         ]);
         if (strlen($datos['password']) > 72) {
             throw ValidationException::withMessages(['password' => 'Usa una contraseña de hasta 72 bytes.']);

@@ -35,6 +35,58 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         aplicar();
+        const formularioClave = document.querySelector('[data-formulario-clave]');
+        formularioClave?.querySelectorAll('[data-ver-clave]').forEach(boton => {
+            boton.addEventListener('click', () => {
+                const entrada = document.getElementById(boton.dataset.verClave);
+                const visible = entrada.type === 'password';
+                entrada.type = visible ? 'text' : 'password';
+                boton.setAttribute('aria-pressed', String(visible));
+                boton.setAttribute('aria-label', `${visible ? 'Ocultar' : 'Mostrar'} ${entrada.labels[0].textContent.toLowerCase()}`);
+            });
+        });
+        const nuevaClave = formularioClave?.querySelector('[name="password"]');
+        nuevaClave?.addEventListener('input', () => {
+            const clave = nuevaClave.value;
+            const requisitos = {
+                longitud: [...clave].length >= 12,
+                mayuscula: /\p{Lu}/u.test(clave),
+                minuscula: /\p{Ll}/u.test(clave),
+                numero: /[\p{N}\p{P}\p{S}]/u.test(clave),
+            };
+            formularioClave.querySelectorAll('[data-requisito]').forEach(elemento => {
+                elemento.dataset.cumplido = String(requisitos[elemento.dataset.requisito]);
+            });
+        });
+        const selectorFoto = document.getElementById('foto-perfil');
+        const guardarFoto = document.querySelector('.perfil-guardar-foto');
+        const verFoto = document.querySelector('.perfil-ver-foto');
+        const dialogoFoto = document.querySelector('.perfil-foto-dialogo');
+        verFoto?.addEventListener('click', () => {
+            const imagen = document.querySelector('.perfil-avatar img');
+            if (!imagen || !dialogoFoto) return;
+            dialogoFoto.querySelector('img').src = imagen.src;
+            dialogoFoto.showModal();
+        });
+        if (guardarFoto) guardarFoto.hidden = true;
+        selectorFoto?.addEventListener('change', () => {
+            const archivo = selectorFoto.files[0];
+            const avatar = document.querySelector('.perfil-avatar');
+            if (guardarFoto) guardarFoto.hidden = !archivo;
+            if (!archivo || !avatar || !['image/jpeg', 'image/png', 'image/webp'].includes(archivo.type)) return;
+            let imagen = avatar.querySelector('img');
+            if (!imagen) {
+                imagen = document.createElement('img');
+                imagen.alt = '';
+                avatar.append(imagen);
+            }
+            const lector = new FileReader();
+            lector.addEventListener('load', () => {
+                imagen.src = lector.result;
+                if (verFoto) verFoto.hidden = false;
+            });
+            lector.readAsDataURL(archivo);
+        });
         document.querySelector('[data-tema-rapido]')?.addEventListener('click', () => {
             tema = raiz.dataset.tema === 'oscuro' ? 'claro' : 'oscuro';
             recordar('urbantwin:tema', tema);

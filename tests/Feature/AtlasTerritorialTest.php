@@ -2,12 +2,44 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCaseConBD;
 
 class AtlasTerritorialTest extends TestCaseConBD
 {
+    public function test_cada_usuario_puede_actualizar_solo_su_foto_de_perfil(): void
+    {
+        Storage::fake('local');
+        $duena = $this->usuario('Consulta');
+        $otra = $this->usuario('Consulta');
+        $foto = new UploadedFile(public_path('img/icono.png'), 'foto.png', 'image/png', null, true);
+
+        $this->post('/perfil/foto')->assertRedirect('/login');
+        $this->actingAs($duena)->post('/perfil/foto', ['foto' => $foto])->assertSessionHasNoErrors();
+        $ruta = DB::table('app.perfiles')->where('usuario_id', $duena->id)->value('foto');
+        Storage::disk('local')->assertExists($ruta);
+        $this->get('/perfil/foto')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
+        $this->actingAs($otra)->get('/perfil/foto')->assertNotFound();
+
+        $this->actingAs($duena)->post('/perfil/foto', ['foto' => new UploadedFile(public_path('img/login.png'), 'nueva.png', 'image/png', null, true)])->assertSessionHasNoErrors();
+        Storage::disk('local')->assertMissing($ruta);
+        Storage::disk('local')->assertExists(DB::table('app.perfiles')->where('usuario_id', $duena->id)->value('foto'));
+    }
+
+    public function test_rechaza_archivos_que_no_son_imagenes_de_perfil(): void
+    {
+        Storage::fake('local');
+        $usuario = $this->usuario('Consulta');
+
+        $this->actingAs($usuario)->post('/perfil/foto', ['foto' => UploadedFile::fake()->create('archivo.txt', 1, 'text/plain')])
+            ->assertSessionHasErrors('foto');
+        $this->assertDatabaseMissing('app.perfiles', ['usuario_id' => $usuario->id]);
+        Storage::disk('local')->assertDirectoryEmpty('fotos-perfil');
+    }
+
     public function test_publica_teselas_con_la_categoria_y_resume_distritos_en_el_panel(): void
     {
         $this->withoutVite();

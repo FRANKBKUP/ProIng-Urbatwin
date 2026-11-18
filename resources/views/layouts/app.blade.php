@@ -42,7 +42,7 @@
                 <x-icono n="usuarios"/> <span class="enlace-texto">Lugares y grupos</span>
             </a>
             <a class="enlace" href="{{ route('geo.perfil.mostrar') }}" @if(request()->routeIs('geo.perfil.*')) aria-current="page" @endif>
-                <x-icono n="usuarios"/> <span class="enlace-texto">Perfil y preferencias</span>
+                <x-icono n="usuarios"/> <span class="enlace-texto">Mi perfil</span>
             </a>
             @if(auth()->user()->tieneRol('Analista', 'Administrador'))
                 <a class="enlace" href="{{ route('geo.reportes.index') }}" @if(request()->routeIs('geo.reportes.*')) aria-current="page" @endif>
@@ -90,7 +90,7 @@
         @endif
 
         <div class="usuario-pie">
-            <span class="avatar-persona usuario-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->nombre, 0, 1)) }}</span>
+            <span class="avatar-persona usuario-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->nombre, 0, 1)) }}@if(Route::has('geo.perfil.foto'))<img src="{{ route('geo.perfil.foto') }}" alt="" onerror="this.hidden = true">@endif</span>
             <div class="usuario-datos">
                 <div class="nombre">{{ auth()->user()->nombre }}</div>
                 <div class="rol">{{ auth()->user()->rol->nombre }}</div>
@@ -110,14 +110,8 @@
             <button id="mostrar-menu" class="btn-sec boton-menu" type="button" aria-controls="menu-principal" aria-label="Mostrar menú" title="Mostrar menú">
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
             </button>
-            <div class="workbar-titulo">@yield('barra-superior', 'UrbanTwin Perú')</div>
+            <div class="workbar-titulo">@unless(request()->routeIs('geo.perfil.*'))@yield('barra-superior', 'UrbanTwin Perú')@endunless</div>
             <button type="button" class="btn-sec" data-tema-rapido aria-pressed="false">Modo oscuro</button>
-            @if(\Illuminate\Support\Facades\Route::has('geo.perfil.mostrar'))
-                <a href="{{ route('geo.perfil.mostrar') }}" class="workbar-perfil">
-                    <span class="avatar-persona" aria-hidden="true">{{ mb_strtoupper(mb_substr(auth()->user()->nombre, 0, 1)) }}</span>
-                    <span>Perfil y ajustes</span>
-                </a>
-            @endif
         </header>
         <main id="contenido" class="cuerpo">
             @if(session('ok'))

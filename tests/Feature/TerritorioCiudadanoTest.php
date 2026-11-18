@@ -40,6 +40,19 @@ class TerritorioCiudadanoTest extends TestCaseConBD
         $this->assertTrue(Hash::check('Clave12345!', $otra->fresh()->password));
     }
 
+    public function test_rechaza_una_contrasena_nueva_sin_los_caracteres_requeridos(): void
+    {
+        $usuario = $this->usuario('Consulta');
+
+        $this->actingAs($usuario)->from('/perfil')->patch('/perfil/contrasena', [
+            'current_password' => 'Clave12345!',
+            'password' => 'sololetrasminusculas',
+            'password_confirmation' => 'sololetrasminusculas',
+        ])->assertSessionHasErrors(['password' => 'Incluye mayúsculas, minúsculas y un número o carácter especial.']);
+
+        $this->assertTrue(Hash::check('Clave12345!', $usuario->fresh()->password));
+    }
+
     public function test_oculta_simulaciones_de_la_consulta_ciudadana_y_muestra_observaciones(): void
     {
         Storage::fake('local');

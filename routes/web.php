@@ -53,6 +53,8 @@ if (config('database.default') === 'pgsql') {
             ->where('departamento', '[A-Z0-9*-]{1,16}')->middleware('throttle:30,1')->name('pronostico');
         Route::get('/api/geo/perfiles', [PerfilController::class, 'mapa'])->name('perfil.mapa');
         Route::get('/perfil', [PerfilController::class, 'mostrar'])->name('perfil.mostrar');
+        Route::get('/perfil/foto', [PerfilController::class, 'foto'])->name('perfil.foto');
+        Route::post('/perfil/foto', [PerfilController::class, 'guardarFoto'])->name('perfil.foto.guardar');
         Route::patch('/perfil', [PerfilController::class, 'guardar'])->name('perfil.guardar');
         Route::patch('/perfil/contrasena', [PerfilController::class, 'cambiarContrasena'])
             ->middleware('throttle:8,1')->name('perfil.contrasena');
