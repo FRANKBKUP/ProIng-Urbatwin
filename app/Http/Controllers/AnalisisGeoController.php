@@ -4,18 +4,117 @@ namespace App\Http\Controllers;
 
 use App\Services\Analisis\ReporteExposicion;
 use App\Services\Catalogo\CapasPublicadas;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonPeriod;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AnalisisGeoController extends Controller
 {
     public function index(Request $request, CapasPublicadas $capas): View
     {
+        $datos = $request->validate([
+            'serie' => ['nullable', 'integer', 'min:1'],
+            'desde' => ['nullable', 'required_with:hasta', 'date_format:Y-m-d'],
+            'hasta' => ['nullable', 'required_with:desde', 'date_format:Y-m-d', 'after_or_equal:desde'],
+            'agrupar' => ['nullable', Rule::in(['automatico', 'diario', 'mensual', 'anual'])],
+        ]);
+        $series = DB::table('geo.lluvia_series')->orderBy('zona')->orderByDesc('inicio')
+            ->get(['id', 'zona', 'producto', 'inicio', 'fin', 'unidad', 'metodo', 'fuente', DB::raw('md5(ST_AsEWKB(geom)) as area_clave')]);
+        $seleccion = $request->filled('serie')
+            ? $series->firstWhere('id', (int) $request->input('serie'))
+            : $series->first();
+        abort_if($request->filled('serie') && ! $seleccion, 404);
+        $rangos = collect();
+        foreach ($series->groupBy(fn ($serie) => hash('sha256', json_encode([
+            $serie->zona, $serie->producto, $serie->unidad, $serie->metodo, $serie->area_clave,
+        ], JSON_THROW_ON_ERROR))) as $compatibles) {
+            $bloque = collect();
+            foreach ($compatibles->sortBy('inicio') as $serie) {
+                if ($bloque->isNotEmpty() && CarbonImmutable::parse($bloque->last()->fin)->addDay()->format('Y-m-d') !== $serie->inicio) {
+                    $rangos->push($bloque);
+                    $bloque = collect();
+                }
+                $bloque->push($serie);
+            }
+            if ($bloque->isNotEmpty()) {
+                $rangos->push($bloque);
+            }
+        }
+        $opciones = $rangos->map(function ($bloque) use ($seleccion) {
+            $representante = $seleccion && $bloque->contains('id', $seleccion->id) ? $seleccion : $bloque->first();
+            $representante->inicio_disponible = $bloque->first()->inicio;
+            $representante->fin_disponible = $bloque->last()->fin;
+            $representante->series_compatibles = $bloque->pluck('id')->all();
+
+            return $representante;
+        });
+        $lluvia = null;
+        if ($seleccion) {
+            $desde = $datos['desde'] ?? $seleccion->inicio_disponible;
+            $hasta = $datos['hasta'] ?? $seleccion->fin_disponible;
+            if ($desde < $seleccion->inicio_disponible || $hasta > $seleccion->fin_disponible) {
+                throw ValidationException::withMessages(['desde' => 'Selecciona fechas dentro del período disponible.']);
+            }
+            $cantidadDias = (int) CarbonImmutable::parse($desde)->diffInDays(CarbonImmutable::parse($hasta)) + 1;
+            $agrupacionSolicitada = $datos['agrupar'] ?? 'automatico';
+            $agrupacion = $agrupacionSolicitada === 'automatico'
+                ? ($cantidadDias <= 92 ? 'diario' : ($cantidadDias <= 730 ? 'mensual' : 'anual'))
+                : $agrupacionSolicitada;
+            if ($agrupacion === 'diario' && $cantidadDias > 366) {
+                throw ValidationException::withMessages(['agrupar' => 'Para más de 366 días, elige la agrupación mensual o anual.']);
+            }
+            $registros = DB::table('geo.lluvia_diaria')->whereIn('serie_id', $seleccion->series_compatibles)
+                ->whereBetween('fecha', [$desde, $hasta])
+                ->orderBy('fecha')->get(['fecha', 'precipitacion_mm', 'cobertura'])->keyBy('fecha');
+            $dias = collect(CarbonPeriod::create($desde, $hasta))->map(function ($fecha) use ($registros) {
+                $registro = $registros->get($fecha->format('Y-m-d'));
+
+                return ['fecha' => $fecha->format('Y-m-d'), 'valor' => $registro ? (float) $registro->precipitacion_mm : null];
+            });
+            $disponibles = $dias->filter(fn (array $dia) => $dia['valor'] !== null);
+            $grafico = $dias->groupBy(fn (array $dia) => match ($agrupacion) {
+                'anual' => substr($dia['fecha'], 0, 4),
+                'mensual' => substr($dia['fecha'], 0, 7),
+                default => $dia['fecha'],
+            })->map(function ($grupo, string $clave) use ($agrupacion) {
+                $valores = $grupo->filter(fn (array $dia) => $dia['valor'] !== null);
+                $etiqueta = match ($agrupacion) {
+                    'anual' => $clave,
+                    'mensual' => CarbonImmutable::parse($clave.'-01')->format('m/Y'),
+                    default => CarbonImmutable::parse($clave)->format('d/m/Y'),
+                };
+
+                return ['etiqueta' => $etiqueta, 'valor' => $valores->isEmpty() ? null : $valores->sum('valor'),
+                    'faltantes' => $grupo->count() - $valores->count()];
+            })->values();
+            $lluvia = [
+                'serie' => $seleccion,
+                'dias' => $dias,
+                'disponibles' => $disponibles->count(),
+                'faltantes' => $dias->count() - $disponibles->count(),
+                'total' => $disponibles->isEmpty() ? null : $disponibles->sum('valor'),
+                'mayor' => $disponibles->sortByDesc('valor')->first(),
+                'grafico' => $grafico,
+                'maximo_grafico' => $grafico->max('valor'),
+                'agrupacion' => $agrupacion,
+                'agrupacion_solicitada' => $agrupacionSolicitada,
+                'desde' => $desde,
+                'hasta' => $hasta,
+                'inicio' => CarbonImmutable::parse($desde)->format('d/m/Y'),
+                'fin' => CarbonImmutable::parse($hasta)->format('d/m/Y'),
+            ];
+        }
+
         return view('geo.reportes', [
+            'seriesLluvia' => $opciones,
+            'lluvia' => $lluvia,
             'capas' => $capas->disponibles()->whereIn('c.tipo', ['peligro', 'vias', 'equipamiento'])
                 ->orderBy('c.nombre')->get()->groupBy('tipo'),
             'reportes' => $this->reportes()->when(! $request->user()->tieneRol('Administrador'),
