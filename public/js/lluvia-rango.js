@@ -4,9 +4,30 @@
     const selector = formulario.querySelector('[name="serie"]');
     const desde = formulario.querySelector('[name="desde"]');
     const hasta = formulario.querySelector('[name="hasta"]');
+    const notificacion = formulario.querySelector('[data-lluvia-notificacion]');
+    const agrupacion = formulario.querySelector('[name="agrupar"]');
     const calendario = formulario.querySelector('[data-calendario-lluvia]');
     const desplegable = calendario.closest('details');
     const lectura = document.querySelector('[data-lluvia-lectura]');
+    const datosDiarios = document.querySelector('[data-lluvia-datos-diarios]');
+    let datosAbiertosAntesDeImprimir = false;
+    window.addEventListener('beforeprint', () => {
+        if (!datosDiarios) return;
+        datosAbiertosAntesDeImprimir = datosDiarios.open;
+        datosDiarios.open = true;
+    });
+    window.addEventListener('afterprint', () => {
+        if (datosDiarios) datosDiarios.open = datosAbiertosAntesDeImprimir;
+    });
+    formulario.addEventListener('submit', evento => {
+        const dias = (Date.parse(`${hasta.value}T00:00:00Z`) - Date.parse(`${desde.value}T00:00:00Z`)) / 86400000 + 1;
+        notificacion.hidden = !(agrupacion.value === 'diario' && dias > 366);
+        if (!notificacion.hidden) {
+            evento.preventDefault();
+            agrupacion.focus();
+        }
+    });
+    agrupacion.addEventListener('change', () => { notificacion.hidden = true; });
     document.querySelectorAll('[data-lluvia-dia]').forEach(barra => {
         const mostrar = () => {
             const parcial = Number(barra.dataset.lluviaParcial) > 0 ? ' · acumulado parcial' : '';
@@ -42,14 +63,18 @@
     };
     const seleccionar = (primero, ultimo) => {
         [desde.value, hasta.value] = primero <= ultimo ? [primero, ultimo] : [ultimo, primero];
+        notificacion.hidden = true;
         dibujar();
     };
+    desde.closest('.lluvia-fechas').hidden = true;
     const mesRelativo = (valor, diferencia) => {
         const [ano, numero] = valor.split('-').map(Number);
         const fecha = new Date(Date.UTC(ano, numero - 1 + diferencia, 1));
         return fecha.toISOString().slice(0, 7);
     };
     function dibujar() {
+        const formatoCorto = fecha => fecha.split('-').reverse().join('/');
+        formulario.querySelector('[data-lluvia-rango-texto]').textContent = `${formatoCorto(desde.value)} – ${formatoCorto(hasta.value)}`;
         calendario.replaceChildren();
         const cabecera = document.createElement('div');
         cabecera.className = 'lluvia-calendario-cabecera';
@@ -57,13 +82,49 @@
         anterior.type = 'button'; anterior.textContent = '‹'; anterior.setAttribute('aria-label', 'Mes anterior');
         anterior.disabled = mes <= desde.min.slice(0, 7);
         anterior.addEventListener('click', () => { mes = mesRelativo(mes, -1); dibujar(); });
-        const titulo = document.createElement('strong');
-        titulo.textContent = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(mes + '-01T12:00:00Z'));
+        const controles = document.createElement('div');
+        controles.className = 'lluvia-calendario-selectores';
+        const elegirMes = document.createElement('select');
+        elegirMes.setAttribute('aria-label', 'Mes del calendario');
+        for (let i = 1; i <= 12; i++) {
+            const numero = String(i).padStart(2, '0');
+            const valor = `${mes.slice(0, 4)}-${numero}`;
+            const nombre = new Intl.DateTimeFormat('es-PE', { month: 'long', timeZone: 'UTC' }).format(new Date(`2020-${numero}-01T12:00:00Z`));
+            const opcion = new Option(nombre, valor, false, valor === mes);
+            opcion.disabled = valor < desde.min.slice(0, 7) || valor > hasta.max.slice(0, 7);
+            elegirMes.add(opcion);
+        }
+        elegirMes.addEventListener('change', () => { mes = elegirMes.value; dibujar(); });
+        const elegirAno = document.createElement('select');
+        elegirAno.setAttribute('aria-label', 'Año del calendario');
+        for (let ano = Number(desde.min.slice(0, 4)); ano <= Number(hasta.max.slice(0, 4)); ano++) {
+            elegirAno.add(new Option(String(ano), String(ano), false, String(ano) === mes.slice(0, 4)));
+        }
+        elegirAno.addEventListener('change', () => {
+            const candidato = `${elegirAno.value}-${mes.slice(5)}`;
+            mes = candidato < desde.min.slice(0, 7) ? desde.min.slice(0, 7) : candidato > hasta.max.slice(0, 7) ? hasta.max.slice(0, 7) : candidato;
+            dibujar();
+        });
+        controles.append(elegirMes, elegirAno);
         const siguiente = document.createElement('button');
         siguiente.type = 'button'; siguiente.textContent = '›'; siguiente.setAttribute('aria-label', 'Mes siguiente');
         siguiente.disabled = mes >= hasta.max.slice(0, 7);
         siguiente.addEventListener('click', () => { mes = mesRelativo(mes, 1); dibujar(); });
-        cabecera.append(anterior, titulo, siguiente);
+        cabecera.append(anterior, controles, siguiente);
+        const accesos = document.createElement('div');
+        accesos.className = 'lluvia-calendario-accesos';
+        for (const [etiqueta, inicio, fin] of [
+            ['Todo el mes', `${mes}-01`, `${mes}-${String(new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5)), 0)).getUTCDate()).padStart(2, '0')}`],
+            ['Todo el año', `${mes.slice(0, 4)}-01-01`, `${mes.slice(0, 4)}-12-31`],
+        ]) {
+            const boton = document.createElement('button');
+            boton.type = 'button'; boton.textContent = etiqueta;
+            boton.addEventListener('click', () => {
+                seleccionar(inicio < desde.min ? desde.min : inicio, fin > hasta.max ? hasta.max : fin);
+                esperaFin = false; desplegable.open = false; desplegable.querySelector('summary').focus();
+            });
+            accesos.append(boton);
+        }
         const ayuda = document.createElement('p');
         ayuda.className = 'lluvia-calendario-ayuda';
         ayuda.textContent = 'Elige dos fechas o arrastra para seleccionar un rango.';
@@ -106,7 +167,7 @@
             });
             rejilla.append(boton);
         }
-        calendario.append(cabecera, ayuda, rejilla);
+        calendario.append(cabecera, accesos, ayuda, rejilla);
     }
     document.addEventListener('pointermove', evento => {
         if (!arrastre || evento.pointerId !== arrastre.pointerId) return;
@@ -134,6 +195,7 @@
         }
     });
     selector.addEventListener('change', () => {
+        notificacion.hidden = true;
         const opcion = selector.selectedOptions[0];
         desde.min = hasta.min = opcion.dataset.inicio;
         desde.max = hasta.max = opcion.dataset.fin;
@@ -141,6 +203,7 @@
         mes = desde.value.slice(0, 7); esperaFin = false; dibujar();
     });
     for (const entrada of [desde, hasta]) entrada.addEventListener('change', () => {
+        notificacion.hidden = true;
         if (entrada.value) { mes = entrada.value.slice(0, 7); esperaFin = false; dibujar(); }
     });
     dibujar();

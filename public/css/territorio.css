@@ -291,11 +291,19 @@ details[open] .perfil-cerrar-clave { display: inline; }
 .reportes-seccion summary strong { display: block; color: var(--atlas-tinta); font-size: 1.05rem; }
 .reportes-seccion summary small { display: block; margin-top: .25rem; color: var(--atlas-suave); }
 .reportes-seccion h2 { margin-top: 0; font-size: 1.05rem; }
-.reportes-desplegable, .lluvia-fuente { margin-top: 1rem; }
+.reportes-desplegable, .lluvia-fuente { margin-top: .65rem; }
 .reportes-desplegable > summary, .lluvia-fuente > summary, .lluvia-calendario > summary { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .7rem .8rem; border: 1px solid var(--atlas-borde); border-radius: .55rem; color: var(--atlas-tinta); background: var(--atlas-superficie); font-size: .85rem; font-weight: 650; cursor: pointer; list-style: none; }
 .reportes-desplegable[open] > summary > span:last-child, .lluvia-calendario[open] > summary > span:last-child, .lluvia-fuente[open] > summary > span:last-child, .reportes-seccion details[open] > summary > span:last-child { transform: rotate(180deg); }
 .reportes-desplegable summary strong, .lluvia-fuente summary strong { display: block; }
 .reportes-desplegable summary small, .lluvia-fuente summary small { display: block; margin-top: .2rem; color: var(--atlas-suave); font-size: .75rem; font-weight: 400; }
+.reportes-desplegable > summary, .lluvia-fuente > summary { padding: .7rem .85rem; transition: border-color .18s, background .18s; }
+.reportes-desplegable > summary:hover, .lluvia-fuente > summary:hover { border-color: var(--atlas-acento); background: var(--atlas-destacado); }
+.reportes-desplegable > summary:focus-visible, .lluvia-fuente > summary:focus-visible { outline: 2px solid var(--atlas-acento); outline-offset: 2px; }
+.reportes-resumen { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+.reportes-icono { display: grid; place-items: center; flex: 0 0 2.25rem; height: 2.25rem; border-radius: .6rem; color: var(--atlas-acento); background: var(--atlas-destacado); }
+.reportes-chevron { width: 18px; height: 18px; flex: 0 0 18px; color: var(--atlas-suave); transition: transform .2s; }
+.reportes-desplegable[open] .reportes-chevron, .lluvia-fuente[open] .reportes-chevron { transform: rotate(180deg); }
+.reportes-vacio { margin: .7rem 0 0; padding: .8rem 1rem; border-radius: .55rem; background: var(--atlas-destacado); color: var(--atlas-suave); font-size: .85rem; }
 .reportes-desplegable .tabla-wrap { max-height: 22rem; overflow: auto; margin-top: .5rem; }
 .lluvia-calendario { position: relative; width: 100%; }
 .lluvia-calendario > summary { color: var(--atlas-acento); background: var(--atlas-destacado); }
@@ -307,18 +315,20 @@ details[open] .perfil-cerrar-clave { display: inline; }
 .lluvia-cabecera h2 { margin: .15rem 0 .2rem; color: var(--atlas-tinta); font-size: 1.2rem; }
 .lluvia-cabecera p, .lluvia-ayuda, .lluvia-contexto { margin: 0; color: var(--atlas-suave); }
 .lluvia-etiqueta { color: var(--atlas-acento) !important; font-size: .7rem; font-weight: 750; letter-spacing: .1em; }
-.lluvia-filtro { display: grid; grid-template-columns: minmax(13rem, 1.25fr) minmax(17rem, 1.3fr) minmax(16rem, 1fr); align-items: end; gap: .9rem; margin: 1.35rem 0 0; padding: 1rem; border: 1px solid var(--atlas-borde); border-radius: .8rem; background: var(--atlas-destacado); }
+.lluvia-filtro { display: grid; grid-template-columns: minmax(14rem, 1fr) minmax(18rem, 1.1fr) minmax(9rem, .6fr); align-items: end; gap: .7rem; margin: 1.1rem 0 0; padding: .85rem; border: 1px solid var(--atlas-borde); border-radius: .8rem; background: var(--atlas-destacado); }
 .lluvia-filtro label { display: grid; gap: .4rem; color: var(--atlas-tinta); font-size: .78rem; font-weight: 650; }
+.lluvia-filtro label[hidden] { display: none; }
+.lluvia-notificacion { grid-column: 1 / -1; margin: 0; padding: .65rem .8rem; border: 1px solid var(--ambar-borde, #e5c77a); border-radius: .55rem; background: var(--ambar-fondo); color: var(--ambar-texto); font-size: .83rem; }
+.lluvia-notificacion[hidden] { display: none; }
 .lluvia-filtro > div { display: flex; gap: .5rem; }
 .lluvia-filtro :is(select, input) { min-width: 0; min-height: 42px; border-color: var(--atlas-borde); border-radius: .55rem; background: var(--atlas-superficie); color: var(--atlas-tinta); font-size: .85rem; }
 .lluvia-fechas { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
-.lluvia-fechas-titulo { grid-column: 1 / -1; color: var(--atlas-tinta); font-size: .78rem; font-weight: 650; }
-.lluvia-fechas-titulo span { color: var(--atlas-suave); font-weight: 400; }
+.lluvia-fechas[hidden] { display: none !important; }
 .lluvia-fechas label { min-width: 0; }
 .lluvia-fechas input { min-width: 0; font-variant-numeric: tabular-nums; }
 .lluvia-fechas input:focus-visible { outline: 2px solid #398ec9; outline-offset: 2px; }
 .lluvia-acciones { grid-column: 1 / -1; align-items: end; justify-content: flex-end; min-width: 0; }
-.lluvia-acciones .lluvia-calendario { flex: 0 1 15rem; min-width: 0; }
+.lluvia-acciones .lluvia-calendario { flex: 0 1 10rem; min-width: 0; }
 .lluvia-acciones .lluvia-calendario > summary { min-height: 42px; background: var(--atlas-superficie); }
 .lluvia-calendario-rotulo { display: inline-flex; align-items: center; gap: .45rem; }
 .lluvia-acciones :is(.btn, .btn-sec) { min-height: 42px; flex-shrink: 0; }
@@ -326,6 +336,10 @@ details[open] .perfil-cerrar-clave { display: inline; }
 .lluvia-filtro > [data-calendario-lluvia] { display: block; }
 .lluvia-filtro > button { justify-self: start; }
 .lluvia-calendario-cabecera { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: .5rem; text-transform: capitalize; }
+.lluvia-calendario-selectores { display: flex; gap: .35rem; min-width: 0; }
+.lluvia-calendario-selectores select { min-height: 36px; padding: .25rem; font-size: .82rem; }
+.lluvia-calendario-accesos { display: flex; gap: .4rem; margin: .5rem 0; }
+.lluvia-calendario-accesos button { flex: 1; padding: .4rem; border: 1px solid var(--atlas-borde); border-radius: .4rem; background: var(--atlas-superficie); color: var(--atlas-acento); font-size: .75rem; cursor: pointer; }
 .lluvia-calendario-cabecera button, .lluvia-calendario-rejilla button { display: grid; place-items: center; min-height: 2.2rem; padding: .25rem; border: 0; border-radius: .4rem; background: transparent; color: var(--atlas-tinta); cursor: pointer; }
 .lluvia-calendario-cabecera button:disabled, .lluvia-calendario-rejilla button:disabled { opacity: .3; cursor: not-allowed; }
 .lluvia-calendario-ayuda { margin: .25rem 0 .5rem; font-size: .75rem; color: var(--atlas-suave); }
@@ -341,7 +355,7 @@ details[open] .perfil-cerrar-clave { display: inline; }
 .lluvia-contexto p { margin: .25rem 0 0; color: var(--atlas-tinta); }
 .lluvia-contexto small { color: var(--atlas-suave); }
 .lluvia-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .7rem; margin: .9rem 0 1.25rem; }
-.lluvia-resumen > div { display: grid; align-content: start; gap: .45rem; padding: 1rem; border: 1px solid var(--atlas-borde); border-radius: .75rem; background: var(--atlas-superficie); box-shadow: 0 3px 14px #0f172a08; }
+.lluvia-resumen > div { display: grid; align-content: start; gap: .35rem; padding: .85rem; border: 1px solid var(--atlas-borde); border-radius: .75rem; background: var(--atlas-superficie); box-shadow: 0 3px 14px #0f172a08; }
 .lluvia-resumen > div:first-child { border-left: 3px solid #398ec9; }
 .lluvia-resumen span, .lluvia-resumen small { color: var(--atlas-suave); font-size: .8rem; }
 .lluvia-resumen strong { color: var(--atlas-tinta); font-size: 1.4rem; font-variant-numeric: tabular-nums; }
@@ -368,6 +382,28 @@ details[open] .perfil-cerrar-clave { display: inline; }
 .lluvia-fuente p { margin: .35rem 0 0; font-size: .82rem; line-height: 1.5; color: var(--atlas-suave); }
 .lluvia-fuente { padding: 0; background: transparent; }
 .lluvia-fuente[open] { padding-bottom: .5rem; }
+.lluvia-provincias { margin: 1.2rem 0; padding: .85rem 1rem; border: 1px solid var(--atlas-borde); border-radius: .75rem; background: var(--atlas-superficie); }
+.lluvia-provincias h3 { margin: 0 0 .35rem; font-size: 1rem; }
+.lluvia-provincias .lluvia-ayuda + .lluvia-ayuda { margin-top: .55rem; }
+.lluvia-fuente-impresion, .lluvia-documento-fecha, .lluvia-titulo-impresion { display: none; }
+@media print {
+    .workbar, .cuerpo:has(.lluvia-reporte) > :not(.lluvia-reporte), .lluvia-filtro, .lluvia-lectura, .lluvia-datos-diarios > summary, .lluvia-fuente, .lluvia-grafico-titulo .lluvia-ayuda { display: none !important; }
+    .principal, .cuerpo { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+    .lluvia-reporte { border: 0; padding: 0; }
+    .lluvia-documento-fecha { display: block; margin: .5rem 0; font-size: .75rem; color: #475569; }
+    .lluvia-titulo-impresion { display: block; }
+    .lluvia-datos-diarios .tabla-wrap { max-height: none; overflow: visible; }
+    .lluvia-datos-diarios table { width: 100%; border-collapse: collapse; }
+    .lluvia-datos-diarios thead { display: table-header-group; }
+    .lluvia-datos-diarios tr { break-inside: avoid; }
+    .lluvia-datos-diarios th, .lluvia-datos-diarios td { padding: .3rem .5rem; border-bottom: 1px solid #d1d5db; font-size: .75rem; }
+    .lluvia-fuente-impresion { display: block; margin-top: 1.5rem; font-size: .75rem; }
+    .lluvia-grafico-desplazar { overflow: visible; }
+    .lluvia-grafico { min-width: 0; }
+    .lluvia-columna { flex: 1 1 0; }
+    .lluvia-barra { background: #398ec9 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .lluvia-resumen, .lluvia-grafico-marco, .lluvia-fuente-impresion { break-inside: avoid; }
+}
 @media (max-width: 1000px) {
     .atlas-dashboard-grid { grid-template-columns: 1fr; }
     .perfil-contenido { grid-template-columns: 1fr; }

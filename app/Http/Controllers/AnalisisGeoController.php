@@ -11,7 +11,9 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -72,7 +74,7 @@ class AnalisisGeoController extends Controller
             }
             $registros = DB::table('geo.lluvia_diaria')->whereIn('serie_id', $seleccion->series_compatibles)
                 ->whereBetween('fecha', [$desde, $hasta])
-                ->orderBy('fecha')->get(['fecha', 'precipitacion_mm', 'cobertura'])->keyBy('fecha');
+                ->orderBy('fecha')->get(['fecha', 'precipitacion_mm', 'cobertura', 'sha256'])->keyBy('fecha');
             $dias = collect(CarbonPeriod::create($desde, $hasta))->map(function ($fecha) use ($registros) {
                 $registro = $registros->get($fecha->format('Y-m-d'));
 
@@ -109,6 +111,8 @@ class AnalisisGeoController extends Controller
                 'hasta' => $hasta,
                 'inicio' => CarbonImmutable::parse($desde)->format('d/m/Y'),
                 'fin' => CarbonImmutable::parse($hasta)->format('d/m/Y'),
+                'provincias' => $seleccion->zona === 'Piura' && $seleccion->producto === 'CHIRPS v3.0 final RNL'
+                    ? $this->lluviaProvincias($desde, $hasta, $registros) : collect(),
             ];
         }
 
@@ -121,6 +125,34 @@ class AnalisisGeoController extends Controller
                 fn (Builder $consulta) => $consulta->where('e.usuario_id', $request->user()->id)
             )->orderByDesc('r.creado_en')->orderByDesc('r.id')->simplePaginate(20),
         ]);
+    }
+
+    private function lluviaProvincias(string $desde, string $hasta, Collection $registros): Collection
+    {
+        $filas = collect();
+        $disco = Storage::disk('local');
+        for ($mes = CarbonImmutable::parse($desde)->startOfMonth(); $mes->format('Y-m-d') <= $hasta; $mes = $mes->addMonth()) {
+            $ruta = 'lluvia-piura-limites/'.$mes->format('Y-m').'-provincias.json';
+            if (! $disco->exists($ruta)) {
+                continue;
+            }
+            $datos = json_decode($disco->get($ruta), true);
+            if (! is_array($datos) || ($datos['mes'] ?? null) !== $mes->format('Y-m') || ($datos['limites_sha256'] ?? null) !== '58d0720bc01abd27bd02fb73d2ee8443fc6067352d97b752d100a18e3b97bb58' || ! is_array($datos['registros'] ?? null)) {
+                continue;
+            }
+            foreach ($datos['registros'] as $fila) {
+                $fecha = $fila['fecha'] ?? '';
+                $original = $registros->get($fecha);
+                if ($fecha < $desde || $fecha > $hasta || ! $original || ($fila['archivo_sha256'] ?? null) !== $original->sha256 || ! is_numeric($fila['precipitacion_mm'] ?? null) || ($fila['cobertura'] ?? 0) < 0.999 || ! is_string($fila['codigo'] ?? null) || ! is_string($fila['provincia'] ?? null)) {
+                    continue;
+                }
+                $filas->push($fila);
+            }
+        }
+
+        return $filas->unique(fn (array $fila) => $fila['codigo'].'/'.$fila['fecha'])->groupBy('codigo')
+            ->map(fn ($provincia) => ['nombre' => $provincia->first()['provincia'], 'total' => $provincia->sum('precipitacion_mm'), 'dias' => $provincia->count()])
+            ->sortByDesc('total')->values();
     }
 
     public function generar(Request $request, ReporteExposicion $analisis): JsonResponse|RedirectResponse

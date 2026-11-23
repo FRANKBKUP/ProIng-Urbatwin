@@ -3,9 +3,10 @@
 
 @section('contenido')
     <header class="cabecera">
-        <a href="{{ route('geo.reportes.index') }}">Volver a reportes</a>
+        <a class="no-imprimir" href="{{ route('geo.reportes.index') }}">Volver a reportes</a>
         <h1>Exposición por inundación</h1>
         <p>{{ $reporte->peligro }} · v{{ $reporte->numero }} · {{ $reporte->creado_en }}</p>
+        <button type="button" class="btn-sec no-imprimir" onclick="window.print()">Guardar como PDF</button>
     </header>
     <section class="panel">
         <h2>Resultados · {{ $reporte->total }} exposiciones</h2>

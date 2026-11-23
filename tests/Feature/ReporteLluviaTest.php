@@ -3,10 +3,34 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCaseConBD;
 
 class ReporteLluviaTest extends TestCaseConBD
 {
+    public function test_muestra_datos_provinciales_del_periodo_solo_si_coinciden_con_los_originales(): void
+    {
+        Storage::fake('local');
+        $serie = $this->serie();
+        DB::table('geo.lluvia_series')->where('id', $serie)->update(['producto' => 'CHIRPS v3.0 final RNL']);
+        DB::table('geo.lluvia_diaria')->insert([
+            ['serie_id' => $serie, 'fecha' => '2017-03-01', 'precipitacion_mm' => 1, 'cobertura' => 1, 'archivo' => 'a.tif', 'sha256' => str_repeat('a', 64)],
+            ['serie_id' => $serie, 'fecha' => '2017-03-02', 'precipitacion_mm' => 1, 'cobertura' => 1, 'archivo' => 'b.tif', 'sha256' => str_repeat('b', 64)],
+        ]);
+        Storage::disk('local')->put('lluvia-piura-limites/2017-03-provincias.json', json_encode([
+            'mes' => '2017-03', 'limites_sha256' => '58d0720bc01abd27bd02fb73d2ee8443fc6067352d97b752d100a18e3b97bb58',
+            'registros' => [
+                ['codigo' => 'p', 'provincia' => 'Piura', 'fecha' => '2017-03-01', 'precipitacion_mm' => 2, 'cobertura' => 1, 'archivo_sha256' => str_repeat('a', 64)],
+                ['codigo' => 'p', 'provincia' => 'Piura', 'fecha' => '2017-03-02', 'precipitacion_mm' => 50, 'cobertura' => 1, 'archivo_sha256' => str_repeat('x', 64)],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        $this->actingAs($this->usuario('Analista'))->get('/analisis/reportes?serie='.$serie.'&desde=2017-03-01&hasta=2017-03-02')
+            ->assertOk()->assertSee('2,00 mm (parcial)')->assertSee('1 de 2')
+            ->assertViewHas('lluvia', fn (array $lluvia) => $lluvia['provincias']->count() === 1
+                && $lluvia['provincias'][0]['total'] === 2 && $lluvia['provincias'][0]['dias'] === 1);
+    }
+
     public function test_agrupa_por_anio_un_periodo_de_varios_anios(): void
     {
         $serie = $this->serie();
