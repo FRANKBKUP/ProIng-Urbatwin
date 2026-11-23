@@ -22,7 +22,6 @@
         </div>
     </section>
     <section class="territorio-auth-form" aria-label="@yield('titulo')">
-        <button type="button" class="btn-sec tema-rapido" data-tema-rapido aria-pressed="false">Modo oscuro</button>
         @if($errors->any())
             <div class="alerta err" role="alert"><ul>
                 @foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach

@@ -18,12 +18,6 @@
 
     function aplicar() {
         raiz.dataset.tema = tema === 'sistema' ? (preferencia.matches ? 'oscuro' : 'claro') : tema;
-        const rapido = document.querySelector('[data-tema-rapido]');
-        if (rapido) {
-            const oscuro = raiz.dataset.tema === 'oscuro';
-            rapido.setAttribute('aria-pressed', String(oscuro));
-            rapido.textContent = oscuro ? 'Modo claro' : 'Modo oscuro';
-        }
     }
 
     if (claveCuenta) {
@@ -86,11 +80,6 @@
                 if (verFoto) verFoto.hidden = false;
             });
             lector.readAsDataURL(archivo);
-        });
-        document.querySelector('[data-tema-rapido]')?.addEventListener('click', () => {
-            tema = raiz.dataset.tema === 'oscuro' ? 'claro' : 'oscuro';
-            recordar('urbantwin:tema', tema);
-            aplicar();
         });
         document.querySelector('[data-previsualizar-tema]')?.addEventListener('change', evento => {
             tema = evento.target.value;

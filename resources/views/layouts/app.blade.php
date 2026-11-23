@@ -111,7 +111,6 @@
                 <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
             </button>
             <div class="workbar-titulo">@unless(request()->routeIs('geo.perfil.*'))@yield('barra-superior', 'UrbanTwin Perú')@endunless</div>
-            <button type="button" class="btn-sec" data-tema-rapido aria-pressed="false">Modo oscuro</button>
         </header>
         <main id="contenido" class="cuerpo">
             @if(session('ok'))
