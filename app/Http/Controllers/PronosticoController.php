@@ -11,4 +11,15 @@ class PronosticoController extends Controller
     {
         return response()->json($pronostico->consultar($departamento));
     }
+
+    public function lluvia(string $producto, string $codigo, PronosticoRegional $pronostico): JsonResponse
+    {
+        $resultado = match ($producto) {
+            'mapa' => $pronostico->mapa($codigo),
+            'historico' => $pronostico->historico($codigo),
+            'pronostico' => $pronostico->pronostico($codigo),
+        };
+
+        return response()->json($resultado);
+    }
 }

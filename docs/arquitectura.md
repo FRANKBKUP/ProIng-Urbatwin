@@ -88,12 +88,14 @@ El bloqueo de la capa se mantiene hasta confirmar la transacción. Dos cargas si
 ~~~mermaid
 flowchart LR
     B[Navegador con Blade y MapLibre] -->|HTTP local o HTTPS en producción| W[PHP y Laravel]
-    W -->|PDO PostgreSQL| P[(PostgreSQL 17 con PostGIS)]
+    W -->|PDO PostgreSQL| P[(PostgreSQL con PostGIS)]
     W -->|Disco privado| A[Originales GeoJSON]
+    W -->|HTTPS y cache por ambito| M[Open-Meteo]
+    B -->|Teselas de elevacion| E[Mapterhorn]
     T[PHPUnit] --> P2[(PostGIS de pruebas)]
 ~~~
 
-En el equipo de verificación, Laravel sirve la aplicación en `127.0.0.1:8013` y PostgreSQL escucha en `127.0.0.1:55432`. El clúster portátil reside en `storage/app/ut-runtime/cluster`. `urbantwin_v2_dev` contiene la aplicación y `urbantwin_v2_test` es la base aislada de PHPUnit. Los archivos de origen están en `storage/app/private/originales`. Compose es otra forma de ejecutar PostgreSQL, con un volumen persistente. La topología de producción está documentada como diseño.
+En el equipo de verificación, Laravel sirve la aplicación en `127.0.0.1:8013` y PostgreSQL escucha en `127.0.0.1:55432`. El clúster portátil reside en `storage/app/ut-runtime/cluster`. `urbantwin_v2_dev` contiene la aplicación y `urbantwin_v2_test` es la base aislada de PHPUnit. Los archivos de origen están en `storage/app/private/originales`. Compose define una alternativa con un volumen persistente. En producción, Render ejecuta Laravel en un contenedor y Neon aloja PostgreSQL con PostGIS. El contenedor usa un disco temporal para originales. La conexión de la aplicación a Neon se configura en Render.
 
 ## Escenarios de la vista +1
 
@@ -114,3 +116,28 @@ El satélite académico usa el mosaico EOxCloudless de 2024 y el relieve usa las
 Los límites de `geo.departamentos` y `geo.provincias` encuadran el mapa. La provincia se vincula al departamento que cubre un punto interior de su geometría. El original provincial se conserva con su SHA-256. El contorno simplificado viaja al navegador únicamente al elegir la provincia. [geoBoundaries PER ADM2](https://www.geoboundaries.org/api/current/gbOpen/PER/ADM2/).
 
 La dona de riesgo cuenta distritos por categoría oficial. La dona de precipitación agrupa superficie cartografiada por intervalo en milímetros. La fuente, fecha e intervalo se muestran al pasar el cursor. El pronóstico diario consulta Open-Meteo para un único punto representativo por departamento y conserva la respuesta durante 20 minutos. La geometría de cada lugar privado queda en la aplicación. [CENEPRED](https://sigrid.cenepred.gob.pe/sigridv3/documento/23277), [CHIRPS](https://www.chc.ucsb.edu/data), [Open-Meteo](https://open-meteo.com/en/docs).
+
+### Ficha territorial y fuentes meteorológicas
+
+~~~mermaid
+sequenceDiagram
+    actor C as Ciudadano
+    participant V as Visor
+    participant A as Laravel
+    participant P as PostGIS
+    participant M as Open-Meteo
+    C->>V: Selecciona un punto
+    V->>A: POST ficha con longitud y latitud
+    A->>P: ST_Covers para límites y capas vigentes
+    P-->>V: Provincia, departamento y resultados por capa
+    C->>V: Activa pronóstico o serie anual
+    V->>A: GET producto y código territorial
+    A->>P: Punto de referencia interno al polígono
+    A->>M: Solicitud si falta en caché
+    M-->>A: Datos diarios u horarios
+    A-->>V: Serie con unidades y disponibilidad
+~~~
+
+La consulta de la ficha se limita a capas vigentes. Cuando un punto coincide con un límite, se prioriza el interior y luego un orden estable. Las consultas meteorológicas usan puntos de referencia de región o provincia y redondean sus coordenadas antes de consultar al proveedor. El historial aplica ERA5 de forma consistente en los diez últimos años completos y solo suma años con 365 o 366 días válidos. La animación consulta 24 horas, toma una muestra de cada tres y suaviza el paso visual entre horas. Los controles permiten pausar, avanzar manualmente y respetan el ajuste de movimiento reducido. La caché mantiene los pronósticos durante 20 minutos y el histórico durante 30 días. Ante fallos del proveedor, el visor conserva la navegación y la consulta PostGIS.
+
+Las curvas aproximan bandas de una tesela de elevación cada 200 m, desde el zoom 8. El cliente las renderiza a partir de los píxeles del modelo digital. La cobertura y resolución de la fuente limitan el detalle disponible para levantamientos topográficos. [Modelo digital y atribución](https://mapterhorn.com/attribution/) · [Archivo histórico ERA5](https://open-meteo.com/en/docs/historical-weather-api)

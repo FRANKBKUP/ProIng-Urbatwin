@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="{{ asset('css/urbantwin.css') }}">
     <link rel="stylesheet" href="{{ asset('css/territorio.css') }}?v={{ filemtime(public_path('css/territorio.css')) }}">
-    <script src="{{ asset('js/territorio.js') }}"></script>
+    <script src="{{ asset('js/territorio.js') }}?v={{ filemtime(public_path('js/territorio.js')) }}"></script>
     @stack('estilos')
 </head>
 <body class="@yield('modo')">
@@ -21,6 +21,7 @@
                 <circle cx="17" cy="14" r="9" fill="#2B7FD4" fill-opacity=".55" stroke="#7DB8F0" stroke-width="2"/>
             </svg>
             UrbanTwin
+            <button type="button" id="menu-cerrar" class="menu-cerrar" aria-label="Cerrar menú">×</button>
         </div>
 
         @if(\Illuminate\Support\Facades\Route::has('geo.portal'))
@@ -96,6 +97,7 @@
         </div>
     </nav>
 
+    <button type="button" class="menu-fondo" id="menu-fondo" aria-label="Cerrar menú" tabindex="-1" hidden></button>
     <div class="principal">
         <header class="workbar">
             <button id="alternar-menu" class="btn-sec boton-menu" type="button" aria-controls="menu-principal" aria-expanded="true">

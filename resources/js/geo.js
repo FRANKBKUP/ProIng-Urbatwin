@@ -1,9 +1,10 @@
-import { LngLat, LngLatBounds, Map, Marker, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
+import { AttributionControl, LngLat, LngLatBounds, Map, Marker, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import '../css/geo.css';
 import { iniciarAtlas } from './atlas-mapa.js';
 import { iniciarPersonas } from './personas-mapa.js';
+import { iniciarExploracion } from './geo-exploracion.js';
 
 const mapaBase = {
     urbano: {
@@ -106,6 +107,70 @@ function iniciarVisor() {
     let puntosMedidos = [];
     let focoPendiente = visor.dataset.lugar;
     let puntoActual = null;
+    const exploracion = iniciarExploracion(visor, pedir);
+    const panel = el('panel-lectura');
+    const botonPanel = el('ampliar');
+    const botonPantalla = el('pantalla');
+    const fondoPanel = el('panel-fondo');
+    const movil = matchMedia('(max-width: 880px)');
+    const reducir = matchMedia('(prefers-reduced-motion: reduce)');
+    const curvas = el('curvas');
+    const mostrarCapa = el('mostrar-capa');
+    let panelVisible = !movil.matches;
+
+    function actualizarPanel(visible, moverFoco = false) {
+        panelVisible = visible;
+        visor.classList.toggle('geo-workspace-ampliado', !visible);
+        panel.inert = !visible;
+        fondoPanel.hidden = !visible || !movil.matches;
+        botonPanel.setAttribute('aria-expanded', String(visible));
+        if (moverFoco) (visible ? el('buscar-ambito') : botonPanel).focus();
+    }
+
+    actualizarPanel(panelVisible);
+    botonPanel.addEventListener('click', () => actualizarPanel(!panelVisible, true));
+    fondoPanel.addEventListener('click', () => actualizarPanel(false, true));
+    el('cerrar-panel').addEventListener('click', () => actualizarPanel(false, true));
+    el('ver-punto').addEventListener('click', () => {
+        actualizarPanel(true);
+        el('ficha-titulo').scrollIntoView({ block: 'start' });
+        el('ficha-titulo').tabIndex = -1;
+        el('ficha-titulo').focus({ preventScroll: true });
+    });
+    movil.addEventListener('change', () => actualizarPanel(!movil.matches));
+    function vistaCompleta() {
+        const activa = document.fullscreenElement === visor || visor.classList.contains('geo-vista-completa');
+        botonPantalla.setAttribute('aria-pressed', String(activa));
+        botonPantalla.querySelector('span').textContent = activa ? 'Salir de pantalla completa' : 'Pantalla completa';
+        mapa?.resize();
+    }
+    botonPantalla.addEventListener('click', async () => {
+        if (document.fullscreenElement === visor) {
+            await document.exitFullscreen();
+        } else if (visor.classList.contains('geo-vista-completa')) {
+            visor.classList.remove('geo-vista-completa');
+        } else {
+            actualizarPanel(false);
+            try {
+                if (!visor.requestFullscreen) throw new Error();
+                await visor.requestFullscreen();
+            } catch {
+                visor.classList.add('geo-vista-completa');
+            }
+        }
+        vistaCompleta();
+    });
+    document.addEventListener('fullscreenchange', vistaCompleta);
+    visor.addEventListener('keydown', evento => {
+        if (evento.key !== 'Escape' || visor.querySelector('dialog[open]')) return;
+        if (panelVisible && movil.matches) actualizarPanel(false, true);
+        else if (visor.classList.contains('geo-vista-completa')) {
+            visor.classList.remove('geo-vista-completa');
+            vistaCompleta();
+            botonPantalla.focus();
+        }
+    });
+    new ResizeObserver(() => mapa?.resize()).observe(visor.querySelector('.geo-viewport'));
 
     if ('WebGL2RenderingContext' in window) {
         try {
@@ -117,17 +182,20 @@ function iniciarVisor() {
                 maxPitch: 65,
                 maxZoom: 19,
                 renderWorldCopies: false,
+                attributionControl: false,
                 style: estiloInicial(visor.dataset.satelite === '1'),
             });
             mapa.addControl(new NavigationControl(), 'top-right');
             mapa.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
+            mapa.addControl(new AttributionControl({ compact: true }), 'bottom-right');
             mapa.once('load', () => {
                 mapaListo = true;
-                for (const control of [base, relieve, medir, el('centrar')]) {
+                for (const control of [base, relieve, medir, el('centrar'), mostrarCapa, curvas]) {
                     control.disabled = false;
                 }
                 cambiarBase();
                 atlas = iniciarAtlas(mapa, visor, temas, cambiarModo, pedir);
+                exploracion.conectarMapa(mapa);
                 iniciarPersonas(mapa, visor, (lon, lat) => enfocarPunto(lon, lat, 13, false), pedir);
                 dibujarCapa();
                 dibujarLugares();
@@ -144,6 +212,7 @@ function iniciarVisor() {
                         cambiarRelieve();
                         aviso('El proveedor de elevación no respondió. El visor volvió a 2D.');
                     }
+                    if (curvas.checked) el('capas-estado').textContent = 'El proveedor de elevación no pudo entregar algunas teselas.';
                 } else if (sourceId === base.value || /openstreetmap\.org|maps\.eox\.at/.test(error?.url ?? '')) {
                     aviso('Algunas teselas no están disponibles. La capa de inundación sigue operativa.');
                 }
@@ -157,7 +226,7 @@ function iniciarVisor() {
                     if (lugar) {
                         enfocarLugar(lugar);
                     } else {
-                        enfocarPunto(lngLat.lng, lngLat.lat, 11);
+                        enfocarPunto(lngLat.lng, lngLat.lat, mapa.getZoom());
                     }
                 }
             });
@@ -187,17 +256,13 @@ function iniciarVisor() {
     relieve.addEventListener('click', cambiarRelieve);
     el('centrar').addEventListener('click', encuadrar);
     medir.addEventListener('click', alternarMedicion);
-    el('ampliar').addEventListener('click', () => {
-        const amplio = visor.classList.toggle('geo-workspace-ampliado');
-        el('ampliar').setAttribute('aria-expanded', String(!amplio));
-        el('ampliar').textContent = amplio ? 'Mostrar panel' : 'Ampliar mapa';
-        mapa?.resize();
-    });
+    mostrarCapa.addEventListener('change', mostrarSuperposiciones);
+    curvas.addEventListener('change', cambiarCurvas);
     el('opacidad').addEventListener('input', () => {
         if (mapaListo) mapa.setPaintProperty('peligro-relleno', 'fill-opacity', Number(el('opacidad').value) / 100);
     });
     el('cobertura-visible').addEventListener('change', () => {
-        if (mapaListo) mapa.setLayoutProperty('cobertura-borde', 'visibility', el('cobertura-visible').checked ? 'visible' : 'none');
+        mostrarSuperposiciones();
     });
     grupo.addEventListener('change', cargarLugares);
     el('buscar-lugar').addEventListener('input', mostrarLugares);
@@ -237,11 +302,7 @@ function iniciarVisor() {
         visor.dataset.modo = modo;
         const mostrarHuella = modo === 'huella';
         limpiarResultado();
-        if (mapaListo) {
-            mapa.setLayoutProperty('peligro-relleno', 'visibility', mostrarHuella ? 'visible' : 'none');
-            mapa.setLayoutProperty('peligro-borde', 'visibility', mostrarHuella ? 'visible' : 'none');
-            mapa.setLayoutProperty('cobertura-borde', 'visibility', mostrarHuella && el('cobertura-visible').checked ? 'visible' : 'none');
-        }
+        mostrarSuperposiciones();
         if (mostrarHuella && previo !== modo) {
             if (!capa && !carga) cargarCapa();
             else dibujarCapa();
@@ -249,11 +310,40 @@ function iniciarVisor() {
         if (puntoActual && !inicial && (!mostrarHuella || capa)) analizarPunto(puntoActual);
     }
 
+    function mostrarSuperposiciones() {
+        if (!mapaListo) return;
+        const huella = visor.dataset.modo === 'huella';
+        const visibilidad = (id, visible) => {
+            if (mapa.getLayer(id)) mapa.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+        };
+        visibilidad('peligro-relleno', huella && mostrarCapa.checked);
+        visibilidad('peligro-borde', huella && mostrarCapa.checked);
+        visibilidad('cobertura-borde', huella && mostrarCapa.checked && el('cobertura-visible').checked);
+        visibilidad('atlas-tema-color', !huella && mostrarCapa.checked);
+        visibilidad('atlas-tema-renglones', !huella && mostrarCapa.checked);
+        visor.classList.toggle('geo-sin-capa', !mostrarCapa.checked);
+    }
+
+    function cambiarCurvas() {
+        if (!mapaListo) return;
+        if (curvas.checked && !mapa.getLayer('curvas-dem')) {
+            if (!mapa.getSource('elevacion')) mapa.addSource('elevacion', terreno);
+            const color = ['interpolate', ['linear'], ['elevation'], 0, 'rgba(16,71,63,0)'];
+            for (let altura = 200; altura <= 6800; altura += 200) {
+                color.push(altura - 22, 'rgba(16,71,63,0)', altura, '#10473f', altura + 22, 'rgba(16,71,63,0)');
+            }
+            mapa.addLayer({ id: 'curvas-dem', type: 'color-relief', source: 'elevacion', minzoom: 8,
+                paint: { 'color-relief-color': color, 'color-relief-opacity': 0.76 } }, 'puntos-lugares');
+        }
+        if (mapa.getLayer('curvas-dem')) mapa.setLayoutProperty('curvas-dem', 'visibility', curvas.checked ? 'visible' : 'none');
+        el('capas-estado').textContent = curvas.checked ? 'Curvas aproximadas a partir del relieve. Visibles desde el zoom 8.' : '';
+    }
+
     function cambiarRelieve() {
         const activado = !mapa.getTerrain();
         if (activado && !mapa.getSource('elevacion')) mapa.addSource('elevacion', terreno);
         mapa.setTerrain(activado ? { source: 'elevacion', exaggeration: 1 } : null);
-        mapa.easeTo({ pitch: activado ? 53 : 0, bearing: activado ? -18 : 0, duration: 450 });
+        mapa.easeTo({ pitch: activado ? 53 : 0, bearing: activado ? -18 : 0, duration: reducir.matches ? 0 : 450 });
         relieve.setAttribute('aria-pressed', String(activado));
     }
 
@@ -269,12 +359,14 @@ function iniciarVisor() {
         latitud.value = lat.toFixed(7);
         moverAlPunto(puntoActual);
         analizarPunto(puntoActual);
+        el('ver-punto').hidden = false;
+        exploracion.seleccionarPunto(lon, lat);
     }
 
     function moverAlPunto({ lon, lat, zoom, mostrarPin }) {
         if (!mapaListo) return;
         const centro = [lon, Math.max(-85, Math.min(85, lat))];
-        mapa.easeTo({ center: centro, zoom: Math.max(zoom, mapa.getZoom()), duration: 435 });
+        mapa.easeTo({ center: centro, zoom: Math.max(zoom, mapa.getZoom()), duration: reducir.matches ? 0 : 435 });
         if (mostrarPin) dibujarMarcador(...centro);
         else {
             marcador?.remove();

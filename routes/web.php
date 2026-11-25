@@ -44,6 +44,8 @@ if (config('database.default') === 'pgsql') {
         Route::get('/api/geo/atlas/provincias/{provincia}', [AtlasController::class, 'provincia'])
             ->where('provincia', '[A-Z0-9]{1,40}')->name('atlas.provincia');
         Route::get('/api/geo/atlas/equipo', [AtlasController::class, 'equipo'])->name('atlas.equipo');
+        Route::post('/api/geo/atlas/ficha', [AtlasController::class, 'ficha'])
+            ->middleware('throttle:45,1')->name('atlas.ficha');
         Route::post('/api/geo/atlas/{tema}/consulta', [AtlasController::class, 'consultar'])
             ->where('tema', '[a-z0-9-]{1,48}')->middleware('throttle:60,1')->name('atlas.consultar');
         Route::get('/api/geo/atlas/{tema}/{z}/{x}/{y}.pbf', [AtlasController::class, 'tesela'])
@@ -51,6 +53,9 @@ if (config('database.default') === 'pgsql') {
             ->middleware('throttle:240,1')->name('atlas.tesela');
         Route::get('/api/geo/pronostico/{departamento}', PronosticoController::class)
             ->where('departamento', '[A-Z0-9*-]{1,16}')->middleware('throttle:30,1')->name('pronostico');
+        Route::get('/api/geo/lluvia/{producto}/{codigo}', [PronosticoController::class, 'lluvia'])
+            ->where(['producto' => 'pronostico|historico|mapa', 'codigo' => '[A-Z0-9*-]{1,40}'])
+            ->middleware('throttle:20,1')->name('lluvia');
         Route::get('/api/geo/perfiles', [PerfilController::class, 'mapa'])->name('perfil.mapa');
         Route::get('/perfil', [PerfilController::class, 'mostrar'])->name('perfil.mostrar');
         Route::patch('/perfil', [PerfilController::class, 'guardar'])->name('perfil.guardar');

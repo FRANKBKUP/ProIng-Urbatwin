@@ -3,7 +3,7 @@
 @section('modo', 'modo-portal')
 
 @section('barra-superior')
-    <div class="geo-toolbar"><div><p>ATLAS TERRITORIAL · PERÚ</p><h1>Visor ciudadano</h1></div></div>
+    <div class="geo-toolbar"><div><h1>Visor territorial</h1></div></div>
 @endsection
 
 @push('estilos')
@@ -13,13 +13,26 @@
 @section('contenido')
     <div class="geo-workspace" id="visor-geo" data-vista="{{ $vistaAtlas }}" data-modo="{{ $vistaAtlas === 'huella' ? 'huella' : 'atlas' }}"
         data-limites="{{ route('geo.atlas.limites') }}" data-teselas="{{ url('/api/geo/atlas') }}"
+        data-ficha="{{ route('geo.atlas.ficha') }}" data-lluvia="{{ route('geo.lluvia', ['producto' => '__producto__', 'codigo' => '__codigo__']) }}"
         data-provincia="{{ route('geo.atlas.provincia', ['provincia' => '__codigo__']) }}" data-equipo="{{ route('geo.atlas.equipo') }}"
         data-perfiles="{{ route('geo.perfil.mapa') }}" data-pronostico="{{ url('/api/geo/pronostico') }}"
         data-lugares="{{ route('geo.lugares.mapa') }}" data-guardar="{{ route('geo.lugares.guardar') }}"
         data-lugar="{{ $lugar }}" data-grupo="{{ $grupo }}" data-satelite="{{ config('territorio.satelite_academico') ? '1' : '0' }}">
         <section class="geo-viewport" aria-label="Mapa interactivo">
             <div class="geo-map" id="mapa-geo"></div>
-            <div class="geo-map-tools" aria-label="Herramientas de mapa">
+            <div class="geo-mapa-barra" aria-label="Herramientas principales">
+                <button class="btn geo-accion-panel" id="geo-ampliar" type="button" aria-controls="geo-panel-lectura" aria-expanded="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg>
+                    <span>Explorar</span>
+                </button>
+                <button class="btn-sec" id="geo-pantalla" type="button" aria-pressed="false">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg>
+                    <span>Pantalla completa</span>
+                </button>
+            </div>
+            <details class="geo-map-tools geo-ajustes">
+                <summary>Mapa base y medidas</summary>
+                <div class="geo-ajustes-opciones">
                 <label class="sr-only" for="geo-base">Mapa base</label>
                 <select id="geo-base" disabled>
                     <option value="urbano">Cartografía</option>
@@ -31,22 +44,46 @@
                 <button class="btn-sec" id="geo-terreno" type="button" aria-pressed="false" disabled>Terreno 3D</button>
                 <button class="btn-sec" id="geo-medir" type="button" aria-pressed="false" disabled>Medir</button>
                 <button class="btn-sec" id="geo-centrar" type="button" disabled>Encuadrar</button>
-                <button class="btn-sec" id="geo-ampliar" type="button" aria-controls="geo-panel-lectura" aria-expanded="true">Ampliar mapa</button>
-            </div>
+                </div>
+            </details>
             <p id="geo-mapa-estado" class="geo-mapa-estado" role="status">Cargando mapa…</p>
+            <button type="button" class="btn geo-boton-punto" id="geo-ver-punto" hidden>Ver ficha del punto</button>
             <p id="geo-medida" class="geo-medida" role="status" hidden></p>
             <div class="geo-legend geo-legend-huella" aria-label="Leyenda de huellas">
                 <span><i class="geo-muestra peligro"></i><span id="geo-leyenda-peligro">Huella de inundación</span></span>
                 <span><i class="geo-muestra cobertura"></i>Área analizada</span>
             </div>
             <div id="geo-atlas-leyenda" class="geo-legend geo-legend-atlas" aria-label="Leyenda de la capa"></div>
+            <div class="geo-tiempo" id="geo-tiempo" hidden>
+                <div class="geo-tiempo-cabecera">
+                    <strong>Precipitación por hora</strong>
+                    <button type="button" class="btn-sec" id="geo-cerrar-tiempo" aria-label="Cerrar mapa de precipitación">Cerrar</button>
+                </div>
+                <div class="geo-tiempo-controles">
+                    <button type="button" class="btn-sec" id="geo-reproducir">Reproducir</button>
+                    <label for="geo-hora"><output id="geo-hora-actual" for="geo-hora"></output></label>
+                    <input id="geo-hora" type="range" min="0" max="0" value="0" step="1">
+                </div>
+                <p class="geo-tiempo-escala"><i aria-hidden="true"></i><span>Menor → mayor intensidad · mm/h</span></p>
+            </div>
         </section>
 
+        <button class="geo-panel-fondo" id="geo-panel-fondo" type="button" aria-label="Cerrar explorador" tabindex="-1" hidden></button>
         <aside class="panel geo-panel" id="geo-panel-lectura" aria-label="Capas y lectura territorial">
             <div class="atlas-panel-cabecera">
-                <div><p class="territorio-localidad">CAPAS Y ANÁLISIS</p><h2>Explorar el territorio</h2></div>
-                <button type="button" class="btn-sec" data-abrir-dialogo="guia-visor">Cómo usar</button>
+                <div><h2>Explorar el territorio</h2></div>
+                <div class="geo-panel-acciones">
+                    <button type="button" class="btn-sec" data-abrir-dialogo="guia-visor">Cómo usar</button>
+                    <button type="button" class="btn-sec" id="geo-cerrar-panel" aria-label="Ocultar explorador">×</button>
+                </div>
             </div>
+            <section class="geo-localizar">
+                <label for="geo-buscar-ambito">Buscar región o provincia</label>
+                <input type="search" id="geo-buscar-ambito" placeholder="Ej. Piura o Sullana" autocomplete="off" aria-controls="geo-sugerencias">
+                <ul id="geo-sugerencias" class="geo-sugerencias" hidden></ul>
+            </section>
+            <details class="geo-detalle geo-capas" open>
+            <summary>Capas del mapa</summary>
             <label for="geo-tema">Capa de análisis</label>
             <select id="geo-tema">
                 @foreach($temasAtlas as $tema)
@@ -56,6 +93,12 @@
                 @endforeach
                 <option value="huella" @selected($vistaAtlas === 'huella')>Huella observada · Piura 2017</option>
             </select>
+            <div class="geo-modulos">
+                <label class="geo-check"><input type="checkbox" id="geo-mostrar-capa" checked disabled> Mostrar capa de análisis</label>
+                <label class="geo-check"><input type="checkbox" id="geo-curvas" disabled> Curvas de nivel · 200 m</label>
+                <label class="geo-check"><input type="checkbox" id="geo-lluvia-mapa" disabled> Animación de precipitación</label>
+                <p id="geo-capas-estado" role="status"></p>
+            </div>
             <div id="geo-atlas-detalle" class="atlas-detalle" @if($vistaAtlas === 'huella') hidden @endif>
                 <p id="geo-atlas-periodo"></p>
                 <div id="geo-atlas-lectura" class="atlas-lectura" role="status">
@@ -64,6 +107,7 @@
                 </div>
                 <a id="geo-atlas-fuente" href="#" target="_blank" rel="noopener noreferrer" hidden>Consultar fuente</a>
             </div>
+            </details>
             <section class="geo-detalle geo-navegacion" aria-labelledby="geo-navegacion-titulo">
                 <h3 id="geo-navegacion-titulo">Ir a una ubicación</h3>
                 <div class="geo-coords">
@@ -93,7 +137,8 @@
                 </form>
                 <div class="geo-result" id="geo-resultado" role="status" aria-live="polite" hidden></div>
             </section>
-            <details class="geo-detalle geo-personas" open>
+            @include('geo.exploracion')
+            <details class="geo-detalle geo-personas">
                 <summary>Personas en el mapa</summary>
                 <label for="geo-persona">Equipo del proyecto</label>
                 <select id="geo-persona" disabled><option value="">Selecciona una persona</option></select>
@@ -135,10 +180,6 @@
             </details>
             </div>
 
-            @if($departamentosAtlas->isNotEmpty())
-                @include('geo.pronostico', ['departamentos' => $departamentosAtlas, 'compacto' => true])
-            @endif
-
             <details class="geo-detalle" @if($grupo || $lugar) open @endif>
                 <summary>Lugares en el mapa</summary>
                 <label for="geo-grupo">Mostrar ubicaciones</label>
@@ -164,17 +205,18 @@
                 </form>
             </details>
         </aside>
-    </div>
     <dialog id="guia-visor" class="atlas-dialogo">
         <form method="dialog"><button class="btn-sec" aria-label="Cerrar guía">Cerrar</button></form>
         <h2>Cómo explorar el visor</h2>
         <ol>
             <li><strong>Elige una capa.</strong> Consulta el escenario distrital de CENEPRED, la precipitación histórica o las huellas de Piura.</li>
-            <li><strong>Lee un área.</strong> Pasa el cursor para ver la categoría o el intervalo en milímetros. Haz clic o toca para mantener el resultado.</li>
-            <li><strong>Ve directamente a una zona.</strong> Selecciona un departamento o provincia, ingresa coordenadas o usa «Mi ubicación».</li>
+            <li><strong>Encuentra un lugar.</strong> Escribe una región o provincia, ingresa coordenadas o usa «Mi ubicación».</li>
+            <li><strong>Compara datos.</strong> Pasa el cursor para leer la capa activa. Haz clic o toca para fijar el punto y elige qué consultar en la ficha.</li>
+            <li><strong>Explora la lluvia.</strong> Activa la animación y mueve el control de hora, o revisa el pronóstico y los años completos en la ficha.</li>
             <li><strong>Guarda un lugar.</strong> Selecciona un punto y abre «Guardar punto». Los avatares regionales indican zonas aproximadas elegidas por cada cuenta.</li>
         </ol>
     </dialog>
+    </div>
     <script id="temas-atlas" type="application/json">@json($temasAtlas)</script>
     <script id="provincias-atlas" type="application/json">@json($provinciasAtlas)</script>
     <template id="icono-persona-mapa"><x-icono n="persona"/></template>

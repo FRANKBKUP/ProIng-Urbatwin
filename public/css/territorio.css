@@ -102,6 +102,31 @@
 [data-tema="oscuro"] .territorio-auth { background: #0c1a28; }
 .lateral { background: linear-gradient(180deg, #10283e, #101e31 77%); }
 .menu-contraido .lateral { display: none; }
+.menu-fondo, .menu-cerrar { display: none; }
+@media (max-width: 880px) {
+    .lateral, .menu-contraido .lateral {
+        display: flex;
+        position: fixed;
+        z-index: 26;
+        inset: 0 auto 0 0;
+        width: min(18rem, 85vw);
+        height: 100dvh;
+        flex-direction: column;
+        align-items: stretch;
+        flex-wrap: nowrap;
+        padding: 1rem .7rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+    .menu-contraido .lateral { transform: translateX(-105%); visibility: hidden; }
+    .lateral .marca { margin: 0 .4rem .9rem; }
+    .lateral .usuario-pie { display: grid; margin: auto 0 0; padding: .75rem; }
+    .menu-cerrar { display: inline-flex; margin-left: auto; align-items: center; color: #fff; background: transparent; border: 1px solid #658298; border-radius: .35rem; min-height: 2.65rem; padding: .35rem .6rem; }
+    .menu-fondo:not([hidden]) { display: block; position: fixed; z-index: 25; inset: 0; border: 0; background: #081c30a0; }
+}
+@media (prefers-reduced-motion: no-preference) and (max-width: 880px) {
+    .lateral { transition: transform .23s ease, visibility .23s ease; }
+}
 .workbar { display: flex; gap: .85rem; align-items: center; min-height: 3.8rem; padding: .4rem .85rem; background: var(--atlas-superficie); border-bottom: 1px solid var(--atlas-borde); }
 .workbar-titulo { flex: 1; min-width: 0; color: var(--atlas-tinta); font-weight: 650; }
 .workbar-perfil { display: inline-flex; gap: .5rem; align-items: center; color: var(--atlas-tinta); font-size: .85rem; font-weight: 650; text-decoration: none; padding: .25rem .4rem; border-radius: .55rem; }

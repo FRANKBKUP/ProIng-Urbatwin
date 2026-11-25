@@ -36,6 +36,17 @@ class AtlasController extends Controller
         return response()->json(['personas' => $this->atlas->equipo()])->header('Cache-Control', 'private, no-store');
     }
 
+    public function ficha(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'longitud' => ['required', 'numeric', 'between:-180,180'],
+            'latitud' => ['required', 'numeric', 'between:-90,90'],
+        ]);
+
+        return response()->json($this->atlas->ficha((float) $datos['longitud'], (float) $datos['latitud']))
+            ->header('Cache-Control', 'private, no-store');
+    }
+
     public function consultar(Request $request, string $tema): JsonResponse
     {
         $datos = $request->validate([

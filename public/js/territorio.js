@@ -48,17 +48,37 @@
 
         const menu = document.getElementById('alternar-menu');
         if (menu) {
-            let contraido = (leer('urbantwin:menu') || (innerWidth < 760 ? 'cerrado' : 'abierto')) === 'cerrado';
+            const movil = matchMedia('(max-width: 880px)');
+            const lateral = document.getElementById('menu-principal');
+            const fondo = document.getElementById('menu-fondo');
+            let contraido = movil.matches || leer('urbantwin:menu') === 'cerrado';
             const actualizarMenu = () => {
                 raiz.classList.toggle('menu-contraido', contraido);
                 menu.setAttribute('aria-expanded', String(!contraido));
+                lateral.inert = contraido;
+                fondo.hidden = contraido || !movil.matches;
+            };
+            const cerrarMenu = () => {
+                contraido = true;
+                actualizarMenu();
+                menu.focus();
             };
             actualizarMenu();
             menu.addEventListener('click', () => {
                 contraido = !contraido;
-                recordar('urbantwin:menu', contraido ? 'cerrado' : 'abierto');
+                if (!movil.matches) recordar('urbantwin:menu', contraido ? 'cerrado' : 'abierto');
                 actualizarMenu();
+                if (movil.matches && !contraido) lateral.querySelector('a, button')?.focus();
                 window.dispatchEvent(new Event('resize'));
+            });
+            fondo.addEventListener('click', cerrarMenu);
+            document.getElementById('menu-cerrar').addEventListener('click', cerrarMenu);
+            document.addEventListener('keydown', evento => {
+                if (evento.key === 'Escape' && movil.matches && !contraido) cerrarMenu();
+            });
+            movil.addEventListener('change', () => {
+                contraido = movil.matches || leer('urbantwin:menu') === 'cerrado';
+                actualizarMenu();
             });
         }
 

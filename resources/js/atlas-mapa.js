@@ -14,6 +14,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     const perfiles = el('perfiles');
     const leyenda = el('atlas-leyenda');
     const lectura = el('atlas-lectura');
+    const reducir = matchMedia('(prefers-reduced-motion: reduce)');
     const emergente = new Popup({ closeButton: false, closeOnClick: false, className: 'atlas-popup', offset: 12 });
     let limites = [];
     let abierto = null;
@@ -53,7 +54,6 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     region.addEventListener('change', () => {
         cargarProvincias();
         encuadrar();
-        cambiarPronostico(region.value);
         cargarPerfiles();
     });
     provincia.addEventListener('change', elegirProvincia);
@@ -86,7 +86,6 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         const detalle = leer(evento.point);
         if (!detalle) return;
         lectura.replaceChildren(dibujarLectura(detalle));
-        cambiarPronostico(detalle.codigoRegion);
     });
 
     cargarProvincias();
@@ -126,11 +125,13 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         });
         mapa.addLayer({
             id: 'atlas-tema-color', type: 'fill', source: 'atlas-tema', 'source-layer': 'zonas',
+            layout: { visibility: el('mostrar-capa').checked ? 'visible' : 'none' },
             paint: { 'fill-color': colores, 'fill-opacity': abierto.tipo === 'riesgo' ? 0.71 : 0.77 },
         }, 'atlas-region-borde');
         if (abierto.tipo === 'riesgo') {
             mapa.addLayer({
                 id: 'atlas-tema-renglones', type: 'line', source: 'atlas-tema', 'source-layer': 'zonas',
+                layout: { visibility: el('mostrar-capa').checked ? 'visible' : 'none' },
                 paint: { 'line-color': '#3e484e', 'line-opacity': 0.57, 'line-width': 0.5 },
             }, 'atlas-region-borde');
         }
@@ -160,7 +161,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         return {
             clave: titulo + '/' + nivel?.clase, titulo, color: nivel?.color,
             categoria: nivel ? (abierto.tipo === 'riesgo' ? 'Riesgo · ' + nivel.nombre : 'Precipitación · ' + nivel.nombre) : 'Sin dato de esta capa',
-            periodo: abierto.periodo, codigoRegion: departamento?.codigo, ubigeo: distrito?.ubigeo,
+            periodo: abierto.periodo, ubigeo: distrito?.ubigeo,
         };
     }
 
@@ -179,7 +180,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         nivel.append(detalle.categoria);
         const periodo = document.createElement('small');
         periodo.textContent = detalle.periodo + (detalle.ubigeo ? ' · UBIGEO ' + detalle.ubigeo : '');
-        cuerpo.append(zona, nivel, periodo);
+        cuerpo.append(zona, nivel, periodo, document.createTextNode('Toca o haz clic para ver la ficha.'));
         return cuerpo;
     }
 
@@ -190,13 +191,6 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     function avisar(mensaje) {
         estado.textContent = mensaje;
         estado.hidden = !mensaje;
-    }
-
-    function cambiarPronostico(codigo) {
-        const campo = visor.querySelector('[data-pronostico-widget] select');
-        if (codigo && campo && Array.from(campo.options).some(opcion => opcion.value === codigo)) {
-            campo.value = codigo;
-        }
     }
 
     function cargarProvincias() {
@@ -232,7 +226,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     function encuadrar() {
         if (ambitoProvincia) {
             resaltar(ambitoProvincia.geometria);
-            mapa.fitBounds(ambitoProvincia.limites, { padding: 64, duration: 450, maxZoom: 11 });
+            mapa.fitBounds(ambitoProvincia.limites, { padding: 48, duration: reducir.matches ? 0 : 450, maxZoom: 11 });
             avisar('Provincia de ' + ambitoProvincia.nombre + ' · límites de referencia');
             return;
         }
@@ -247,7 +241,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         const bounds = new LngLatBounds();
         const puntos = zona.coordinates.flat(zona.type === 'MultiPolygon' ? 2 : 1);
         for (const punto of puntos) bounds.extend(punto);
-        mapa.fitBounds(bounds, { padding: 64, duration: 450, maxZoom: 11 });
+        mapa.fitBounds(bounds, { padding: 48, duration: reducir.matches ? 0 : 450, maxZoom: 11 });
         avisar(distrito.properties.nombre);
     }
 

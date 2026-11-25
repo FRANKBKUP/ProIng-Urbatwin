@@ -17,6 +17,17 @@ La fuente identifica las observaciones históricas y su escala de trabajo de **1
 
 La base local que usa la aplicación es `urbantwin_v2_dev`, servida por PostgreSQL con PostGIS en `127.0.0.1:55432`. `urbantwin_v2_test` está reservada para pruebas. En la instalación portátil, los datos de PostgreSQL viven bajo `storage/app/ut-runtime/cluster` y los archivos originales bajo `storage/app/private/originales`. Revisa el [DER y las vistas de arquitectura](docs/arquitectura.md) y el [procedimiento de publicación](docs/operacion.md).
 
+## Explorar lluvia y relieve
+
+Abre **Visor territorial** e introduce una región o provincia en **Explorar**. El visor encuadra el límite elegido. Pulsa **Pantalla completa** para ampliar el área de trabajo y oculta el explorador si quieres usar todo el mapa. En el celular, **Menú** abre la navegación de la aplicación y **Explorar** abre el panel del mapa.
+
+1. Pasa el cursor por la capa activa para ver su categoría y período. Elige un punto por toque, clic o coordenadas. Abre **Ver ficha del punto** y marca las consultas que necesitas. La ficha muestra el distrito y UBIGEO si están en la fuente, la provincia, las categorías de las capas vigentes y sus referencias.
+2. Activa **Curvas de nivel · 200 m** y acércate a una provincia. Las líneas aproximan cotas del modelo digital de elevación de Mapterhorn desde el zoom 8.
+3. Activa **Animación de precipitación** y recorre la línea de tiempo o pulsa **Reproducir**. Cada hora mostrada proviene de Open-Meteo y usa hora del Perú. El mapa representa muestras modeladas en puntos territoriales.
+4. Marca **Pronóstico de 7 días** y **Serie anual (ERA5)** para comparar estimación diaria y acumulados de los diez últimos años completos en el punto de referencia elegido. Consulta los avisos de SENAMHI y los comunicados de ENFEN desde la ficha.
+
+La entrega de Ingeniería de Software incluye [requerimientos y aceptación](docs/requerimientos.md), [diccionario de datos](docs/diccionario-datos.md), [arquitectura](docs/arquitectura.md), [pruebas](docs/pruebas.md) y [operación](docs/operacion.md).
+
 ## Administrar capas y accesos
 
 - En **Catálogo geoespacial → Cargar GeoJSON**, elige una capa, adjunta un archivo `.geojson` o `.json` y completa su procedencia. La vista previa indica el número y tipos de geometrías. El servidor valida la cobertura y la topología antes de publicar. Si rechaza la carga, el detalle enlaza los errores por entidad.

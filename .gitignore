@@ -20,6 +20,8 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/urbantwin.dump
+/urbantwin-archivos.tar
 /vendor
 _ide_helper.php
 Homestead.json

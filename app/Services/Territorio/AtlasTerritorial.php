@@ -81,6 +81,38 @@ class AtlasTerritorial
         ];
     }
 
+    public function ficha(float $longitud, float $latitud): array
+    {
+        $punto = 'ST_SetSRID(ST_MakePoint(?, ?), 4326)';
+        $provincia = DB::table('geo.provincias as p')->join('geo.departamentos as d', 'd.codigo', '=', 'p.departamento')
+            ->whereRaw("ST_Covers(p.geom, $punto)", [$longitud, $latitud])
+            ->orderByRaw("ST_Contains(p.geom, $punto) DESC", [$longitud, $latitud])->orderBy('p.codigo')
+            ->first(['p.codigo', 'p.nombre', 'd.codigo as codigo_departamento', 'd.nombre as departamento']);
+        $departamento = $provincia === null
+            ? DB::table('geo.departamentos')->whereRaw("ST_Covers(geom, $punto)", [$longitud, $latitud])
+                ->orderBy('codigo')->first(['codigo', 'nombre'])
+            : ['codigo' => $provincia->codigo_departamento, 'nombre' => $provincia->departamento];
+
+        $capas = DB::select(<<<'SQL'
+            WITH punto AS (SELECT ST_SetSRID(ST_MakePoint(?, ?), 4326) AS geom)
+            SELECT t.codigo, coalesce(t.etiqueta, t.titulo) AS titulo, t.tipo, t.periodo, t.ficha_url,
+                   z.distrito, z.ubigeo, z.km2, categoria.valor->>'nombre' AS categoria
+            FROM geo.temas t CROSS JOIN punto
+            LEFT JOIN LATERAL (
+                SELECT z.clase, z.distrito, z.ubigeo, z.km2
+                FROM geo.zonas_tematicas z
+                WHERE z.tema = t.codigo AND ST_Covers(z.geom, punto.geom)
+                ORDER BY ST_Contains(z.geom, punto.geom) DESC, z.clase DESC, z.id LIMIT 1
+            ) z ON true
+            LEFT JOIN LATERAL jsonb_array_elements(t.leyenda) categoria(valor)
+                ON (categoria.valor->>'clase')::integer = z.clase
+            WHERE t.retirada_en IS NULL
+            ORDER BY t.tipo DESC, t.codigo
+            SQL, [$longitud, $latitud]);
+
+        return compact('provincia', 'departamento', 'capas');
+    }
+
     public function resumen(Collection $temas): array
     {
         $datos = DB::table('geo.zonas_tematicas')->whereIn('tema', $temas->keys())
