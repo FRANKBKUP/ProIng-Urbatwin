@@ -41,3 +41,5 @@ Para reproducir la demostración visual, selecciona Sullana y activa los módulo
 Para la vista de lluvia reciente, comprueba que **Satélite reciente** indique la fecha de la última imagen y se diferencie de **Pronóstico 24 h**. Reproduce y pausa ambas series, modifica la intensidad del color y confirma que la ficha de un reporte muestre números, fecha, ámbito y enlaces a su evidencia. El caso automatizado de recuperación comprueba que ante un HTTP 429 se reutiliza la última serie válida con la hora original.
 
 La revisión local de esta actualización verificó **69 pruebas y 592 aserciones**, 24 pasos de pronóstico y seis imágenes satelitales. En Piura se comprobaron barras, histograma, fotos y las cifras de INDECI por distrito. A 390 px, la ficha se ajustó al ancho de pantalla y la tabla de reportes conservó su desplazamiento interno.
+
+La prueba de límites de frecuencia solicita 21 teselas y a continuación consulta el pronóstico con la misma cuenta. La API meteorológica debe responder con datos. Las teselas y el pronóstico usan contadores separados.

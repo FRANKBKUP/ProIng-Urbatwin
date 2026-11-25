@@ -132,9 +132,9 @@ export function iniciarLluviaMapa(visor, pedir) {
             actualizarApariencia();
         } catch (error) {
             if (control.signal.aborted) return;
-            estado.textContent = conservar
-                ? 'La actualización no respondió. Puedes seguir reproduciendo la serie anterior.'
-                : 'La fuente no respondió o aún no tiene datos. Prueba de nuevo o cambia de fuente.';
+            estado.textContent = error.status === 429 ? 'Se alcanzó el límite de consultas meteorológicas. Intenta en un minuto.'
+                : conservar ? 'La actualización no respondió. Puedes seguir reproduciendo la serie anterior.'
+                    : 'La fuente no respondió o aún no tiene datos. Prueba de nuevo o cambia de fuente.';
             reintentar.hidden = false;
         }
     }

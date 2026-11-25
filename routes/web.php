@@ -38,24 +38,24 @@ if (config('database.default') === 'pgsql') {
         Route::get('/api/geo/capas/{capa}', [PortalGeoController::class, 'capa'])
             ->whereNumber('capa')->name('capa');
         Route::post('/api/geo/capas/{capa}/consulta', [PortalGeoController::class, 'consultar'])
-            ->whereNumber('capa')->middleware('throttle:60,1')->name('consultar');
+            ->whereNumber('capa')->middleware('throttle:60,1,geo-huella-')->name('consultar');
         Route::get('/api/geo/lugares', [LugaresController::class, 'mapa'])->name('lugares.mapa');
         Route::get('/api/geo/atlas/limites', [AtlasController::class, 'limites'])->name('atlas.limites');
         Route::get('/api/geo/atlas/provincias/{provincia}', [AtlasController::class, 'provincia'])
             ->where('provincia', '[A-Z0-9]{1,40}')->name('atlas.provincia');
         Route::get('/api/geo/atlas/equipo', [AtlasController::class, 'equipo'])->name('atlas.equipo');
         Route::post('/api/geo/atlas/ficha', [AtlasController::class, 'ficha'])
-            ->middleware('throttle:45,1')->name('atlas.ficha');
+            ->middleware('throttle:45,1,geo-ficha-')->name('atlas.ficha');
         Route::post('/api/geo/atlas/{tema}/consulta', [AtlasController::class, 'consultar'])
-            ->where('tema', '[a-z0-9-]{1,48}')->middleware('throttle:60,1')->name('atlas.consultar');
+            ->where('tema', '[a-z0-9-]{1,48}')->middleware('throttle:60,1,geo-tema-')->name('atlas.consultar');
         Route::get('/api/geo/atlas/{tema}/{z}/{x}/{y}.pbf', [AtlasController::class, 'tesela'])
             ->where(['tema' => '[a-z0-9-]{1,48}', 'z' => '[0-9]{1,2}', 'x' => '[0-9]{1,4}', 'y' => '[0-9]{1,4}'])
-            ->middleware('throttle:240,1')->name('atlas.tesela');
+            ->middleware('throttle:240,1,geo-tesela-')->name('atlas.tesela');
         Route::get('/api/geo/pronostico/{departamento}', PronosticoController::class)
-            ->where('departamento', '[A-Z0-9*-]{1,16}')->middleware('throttle:30,1')->name('pronostico');
+            ->where('departamento', '[A-Z0-9*-]{1,16}')->middleware('throttle:30,1,geo-pronostico-')->name('pronostico');
         Route::get('/api/geo/lluvia/{producto}/{codigo}', [PronosticoController::class, 'lluvia'])
             ->where(['producto' => 'pronostico|historico|mapa', 'codigo' => '[A-Z0-9*-]{1,40}'])
-            ->middleware('throttle:20,1')->name('lluvia');
+            ->middleware('throttle:20,1,geo-lluvia-')->name('lluvia');
         Route::get('/api/geo/perfiles', [PerfilController::class, 'mapa'])->name('perfil.mapa');
         Route::get('/perfil', [PerfilController::class, 'mostrar'])->name('perfil.mostrar');
         Route::patch('/perfil', [PerfilController::class, 'guardar'])->name('perfil.guardar');

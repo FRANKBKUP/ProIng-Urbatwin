@@ -216,7 +216,9 @@ export function iniciarExploracion(visor, pedir, alElegirRegion) {
             else mostrarPronostico(contenedor, datos);
         } catch (error) {
             if (!signal.aborted && error.name !== 'AbortError') {
-                mostrarReintento(contenedor, 'La conexión con la fuente no respondió.');
+                mostrarReintento(contenedor, error.status === 429
+                    ? 'Se alcanzó el límite de consultas meteorológicas. Intenta en un minuto.'
+                    : 'La conexión con la fuente no respondió.');
             }
         }
     }

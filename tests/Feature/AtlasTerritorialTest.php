@@ -197,6 +197,27 @@ class AtlasTerritorialTest extends TestCaseConBD
         Http::assertSentCount(2);
     }
 
+    public function test_las_teselas_no_agotan_el_limite_de_consultas_meteorologicas(): void
+    {
+        $this->region();
+        DB::table('geo.temas')->insert([
+            'codigo' => 'riesgo-limite', 'tipo' => 'riesgo', 'titulo' => 'Riesgo distrital',
+            'periodo' => 'Prueba', 'fuente' => 'Prueba', 'ficha_url' => 'https://example.test',
+            'archivo_ruta' => 'prueba.zip', 'archivo_sha256' => str_repeat('a', 64), 'notas' => '', 'leyenda' => '[]',
+        ]);
+        Http::preventStrayRequests();
+        Http::fake(['https://api.open-meteo.com/v1/forecast*' => Http::response([
+            'daily' => ['time' => ['2026-11-24'], 'precipitation_sum' => [3.2], 'precipitation_probability_max' => [70]],
+        ])]);
+        $this->actingAs($this->usuario('Consulta'));
+
+        for ($i = 0; $i < 21; $i++) {
+            $this->get('/api/geo/atlas/riesgo-limite/5/8/16.pbf')->assertOk();
+        }
+        $this->getJson('/api/geo/lluvia/pronostico/PE-PIU')->assertOk()->assertJsonPath('dias.0.mm', 3.2);
+        Http::assertSentCount(1);
+    }
+
     private function region(): void
     {
         DB::insert("INSERT INTO geo.departamentos (codigo, nombre, geom)
