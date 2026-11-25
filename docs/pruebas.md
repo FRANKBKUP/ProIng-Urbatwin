@@ -37,3 +37,7 @@ Para reproducir la demostración visual, selecciona Sullana y activa los módulo
 - Compilación de Vite completada. PHPUnit ejecutó **68 pruebas y 584 aserciones** en la base aislada.
 - En Sullana, la ficha devolvió cuatro capas. La API local obtuvo siete días de pronóstico, diez años completos de 2016 a 2025 y ocho pasos horarios con ocho puntos en Piura.
 - En el navegador se comprobó el encuadre provincial, la pantalla completa, la reproducción meteorológica y el dibujo de las curvas en Cusco. En ancho emulado de 390 px se verificaron los dos paneles laterales, la consulta por coordenadas y los temas claro y oscuro.
+
+Para la vista de lluvia reciente, comprueba que **Satélite reciente** indique la fecha de la última imagen y se diferencie de **Pronóstico 24 h**. Reproduce y pausa ambas series, modifica la intensidad del color y confirma que la ficha de un reporte muestre números, fecha, ámbito y enlaces a su evidencia. El caso automatizado de recuperación comprueba que ante un HTTP 429 se reutiliza la última serie válida con la hora original.
+
+La revisión local de esta actualización verificó **69 pruebas y 592 aserciones**, 24 pasos de pronóstico y seis imágenes satelitales. En Piura se comprobaron barras, histograma, fotos y las cifras de INDECI por distrito. A 390 px, la ficha se ajustó al ancho de pantalla y la tabla de reportes conservó su desplazamiento interno.

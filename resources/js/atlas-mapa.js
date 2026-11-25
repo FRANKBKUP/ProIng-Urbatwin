@@ -1,10 +1,11 @@
 import { LngLatBounds, Marker, Popup } from 'maplibre-gl';
 import { botonPersona } from './personas-mapa.js';
+import { incidentes } from './geo-evidencia.js';
 
 const peru = [[-81.35, -18.4], [-68.57, -0.02]];
 const vacio = { type: 'FeatureCollection', features: [] };
 
-export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
+export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir, inspeccionarObjeto) {
     const el = id => document.getElementById('geo-' + id);
     const selector = el('tema');
     const region = el('region');
@@ -23,6 +24,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     let solicitudProvincia = null;
     let ambitoProvincia = null;
     let claveAnterior = '';
+    let zonaResaltada;
 
     mapa.addSource('atlas-limites', { type: 'geojson', data: vacio });
     mapa.addLayer({
@@ -60,11 +62,19 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     perfiles.addEventListener('change', cargarPerfiles);
 
     mapa.on('mousemove', evento => {
-        if (!abierto || el('medir').getAttribute('aria-pressed') === 'true') {
+        if (el('medir').getAttribute('aria-pressed') === 'true') {
             emergente.remove();
+            claveAnterior = '';
+            resaltarZona();
             return;
         }
-        const detalle = leer(evento.point);
+        const objeto = inspeccionarObjeto(evento.point);
+        const zona = abierto ? leer(evento.point) : null;
+        resaltarZona(zona?.id);
+        const detalle = objeto ? {
+            clave: [objeto.titulo, objeto.detalle, zona?.clave].join('|'), titulo: objeto.titulo,
+            categoria: objeto.detalle, periodo: [objeto.fuente, zona?.categoria].filter(Boolean).join(' · '),
+        } : zona;
         if (!detalle) {
             emergente.remove();
             claveAnterior = '';
@@ -80,6 +90,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
     mapa.getCanvas().addEventListener('mouseleave', () => {
         emergente.remove();
         claveAnterior = '';
+        resaltarZona();
     });
     mapa.on('click', evento => {
         if (!abierto || el('medir').getAttribute('aria-pressed') === 'true') return;
@@ -94,6 +105,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
 
     function actualizar(inicial = false) {
         emergente.remove();
+        resaltarZona();
         claveAnterior = '';
         abierto = temas[selector.value] ?? null;
         if (mapa.getLayer('atlas-tema-renglones')) mapa.removeLayer('atlas-tema-renglones');
@@ -121,20 +133,20 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         colores.push('#829eae');
         mapa.addSource('atlas-tema', {
             type: 'vector', tiles: [visor.dataset.teselas + '/' + abierto.codigo + '/{z}/{x}/{y}.pbf'],
-            bounds: [-82, -19, -68, 0], minzoom: 3, maxzoom: 11,
+            bounds: [-82, -19, -68, 0], minzoom: 3, maxzoom: 11, promoteId: 'id',
         });
         mapa.addLayer({
             id: 'atlas-tema-color', type: 'fill', source: 'atlas-tema', 'source-layer': 'zonas',
             layout: { visibility: el('mostrar-capa').checked ? 'visible' : 'none' },
-            paint: { 'fill-color': colores, 'fill-opacity': abierto.tipo === 'riesgo' ? 0.71 : 0.77 },
+            paint: { 'fill-color': colores, 'fill-opacity': Number(el('tema-opacidad').value) / 100 *
+                    (visor.classList.contains('geo-lluvia-activa') ? .46 : 1) },
         }, 'atlas-region-borde');
-        if (abierto.tipo === 'riesgo') {
-            mapa.addLayer({
-                id: 'atlas-tema-renglones', type: 'line', source: 'atlas-tema', 'source-layer': 'zonas',
-                layout: { visibility: el('mostrar-capa').checked ? 'visible' : 'none' },
-                paint: { 'line-color': '#3e484e', 'line-opacity': 0.57, 'line-width': 0.5 },
-            }, 'atlas-region-borde');
-        }
+        mapa.addLayer({
+            id: 'atlas-tema-renglones', type: 'line', source: 'atlas-tema', 'source-layer': 'zonas',
+            layout: { visibility: el('mostrar-capa').checked ? 'visible' : 'none' },
+            paint: { 'line-color': colores, 'line-opacity': .82,
+                'line-width': ['case', ['boolean', ['feature-state', 'resaltada'], false], 3.2, abierto.tipo === 'riesgo' ? 1.25 : .65] },
+        }, 'atlas-region-borde');
         el('atlas-periodo').textContent = abierto.periodo;
         const enlace = el('atlas-fuente');
         enlace.href = abierto.ficha_url;
@@ -149,10 +161,18 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
 
     function leer(punto) {
         const orden = mapa.queryRenderedFeatures(punto, { layers: ['atlas-tema-color', 'atlas-region-sensor'] });
-        const distrito = orden.find(item => item.layer.id === 'atlas-tema-color')?.properties;
+        const distrito = orden.find(item => item.layer.id === 'atlas-tema-color');
         const departamento = orden.find(item => item.layer.id === 'atlas-region-sensor')?.properties;
         if (!distrito && !departamento) return null;
-        return detalleLectura(distrito, departamento);
+        return { ...detalleLectura(distrito?.properties, departamento), id: distrito?.id };
+    }
+
+    function resaltarZona(id) {
+        if (id === zonaResaltada || !mapa.getSource('atlas-tema')) return;
+        const referencia = valor => ({ source: 'atlas-tema', sourceLayer: 'zonas', id: valor });
+        if (zonaResaltada != null) mapa.removeFeatureState(referencia(zonaResaltada), 'resaltada');
+        zonaResaltada = id;
+        if (id != null) mapa.setFeatureState(referencia(id), { resaltada: true });
     }
 
     function detalleLectura(distrito, departamento) {
@@ -160,7 +180,7 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         const nivel = abierto.leyenda.find(item => item.clase === Number(distrito?.clase));
         return {
             clave: titulo + '/' + nivel?.clase, titulo, color: nivel?.color,
-            categoria: nivel ? (abierto.tipo === 'riesgo' ? 'Riesgo · ' + nivel.nombre : 'Precipitación · ' + nivel.nombre) : 'Sin dato de esta capa',
+            categoria: nivel ? (abierto.tipo === 'riesgo' ? 'Riesgo · ' + nivel.nombre : 'Precipitación · ' + nivel.nombre.replace(/\bmm\b/g, 'milímetros')) : 'Sin dato de esta capa',
             periodo: abierto.periodo, ubigeo: distrito?.ubigeo,
         };
     }
@@ -181,6 +201,12 @@ export function iniciarAtlas(mapa, visor, temas, alCambiar, pedir) {
         const periodo = document.createElement('small');
         periodo.textContent = detalle.periodo + (detalle.ubigeo ? ' · UBIGEO ' + detalle.ubigeo : '');
         cuerpo.append(zona, nivel, periodo, document.createTextNode('Toca o haz clic para ver la ficha.'));
+        const informe = incidentes.find(incidente => incidente.ubigeo === detalle.ubigeo);
+        if (informe) {
+            const afectacion = document.createElement('small');
+            afectacion.textContent = informe.personas + ' personas afectadas · COEN–INDECI, corte ' + informe.fecha;
+            cuerpo.insertBefore(afectacion, cuerpo.lastChild);
+        }
         return cuerpo;
     }
 

@@ -22,9 +22,9 @@ La base local que usa la aplicación es `urbantwin_v2_dev`, servida por PostgreS
 Abre **Visor territorial** e introduce una región o provincia en **Explorar**. El visor encuadra el límite elegido. Pulsa **Pantalla completa** para ampliar el área de trabajo y oculta el explorador si quieres usar todo el mapa. En el celular, **Menú** abre la navegación de la aplicación y **Explorar** abre el panel del mapa.
 
 1. Pasa el cursor por la capa activa para ver su categoría y período. Elige un punto por toque, clic o coordenadas. Abre **Ver ficha del punto** y marca las consultas que necesitas. La ficha muestra el distrito y UBIGEO si están en la fuente, la provincia, las categorías de las capas vigentes y sus referencias.
-2. Activa **Curvas de nivel · 200 m** y acércate a una provincia. Las líneas aproximan cotas del modelo digital de elevación de Mapterhorn desde el zoom 8.
-3. Activa **Animación de precipitación** y recorre la línea de tiempo o pulsa **Reproducir**. Cada hora mostrada proviene de Open-Meteo y usa hora del Perú. El mapa representa muestras modeladas en puntos territoriales.
-4. Marca **Pronóstico de 7 días** y **Serie anual (ERA5)** para comparar estimación diaria y acumulados de los diez últimos años completos en el punto de referencia elegido. Consulta los avisos de SENAMHI y los comunicados de ENFEN desde la ficha.
+2. Activa **Curvas de nivel · 200 m** y acércate a una provincia. Las líneas aproximan cotas de Mapterhorn desde el zoom 8. Pasa el cursor por lagos, ríos, reportes o la huella histórica de Piura para ver qué representa cada elemento.
+3. Pulsa **Lluvia**. Alterna entre **Pronóstico 24 h**, con muestras modeladas de Open-Meteo, y **Satélite reciente**, con imágenes NASA IMERG que se publican con retraso. Reproduce, pausa o elige un paso horario. Ajusta la intensidad del color y el relleno de la capa para conservar visibles los nombres y caminos.
+4. Abre la ficha flotante y marca **Pronóstico de 7 días** y **Serie anual (ERA5)** para comparar estimación diaria, acumulados y distribución de los diez últimos años completos. En Piura puedes abrir reportes distritales de INDECI, fotos y noticias de referencia. 1 mm de lluvia equivale a 1 litro de agua por metro cuadrado.
 
 La entrega de Ingeniería de Software incluye [requerimientos y aceptación](docs/requerimientos.md), [diccionario de datos](docs/diccionario-datos.md), [arquitectura](docs/arquitectura.md), [pruebas](docs/pruebas.md) y [operación](docs/operacion.md).
 

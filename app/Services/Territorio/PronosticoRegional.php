@@ -68,7 +68,7 @@ class PronosticoRegional
     {
         abort_unless($codigo === 'PE' || DB::table('geo.departamentos')->where('codigo', $codigo)->exists(), 404);
 
-        return $this->conCache("lluvia:mapa:v1:$codigo", 'pasos', 20, function () use ($codigo) {
+        return $this->conCache("lluvia:mapa:v2:$codigo", 'pasos', 20, function () use ($codigo) {
             $puntos = $this->puntos($codigo === 'PE' ? 'geo.departamentos' : 'geo.provincias')
                 ->when($codigo !== 'PE', fn (Builder $consulta) => $consulta->where('departamento', $codigo))
                 ->orderBy('codigo')->limit(26)->get();
@@ -93,7 +93,7 @@ class PronosticoRegional
                 $horas = $lugares[$indice]['hourly'] ?? [];
                 foreach (array_slice($horas['time'] ?? [], 0, 24, true) as $hora => $fecha) {
                     $mm = $horas['precipitation'][$hora] ?? null;
-                    if ($hora % 3 === 0 && is_string($fecha) && is_numeric($mm) && $mm >= 0) {
+                    if (is_string($fecha) && is_numeric($mm) && $mm >= 0) {
                         $pasos[$fecha][] = ['codigo' => $punto->codigo, 'nombre' => $punto->nombre,
                             'lon' => (float) $punto->longitud, 'lat' => (float) $punto->latitud, 'mm' => (float) $mm];
                     }
@@ -161,7 +161,16 @@ class PronosticoRegional
         }
 
         $resultado = $cargar();
-        Cache::put($clave, $resultado, now()->addMinutes($resultado['disponible'] && $resultado[$serie] !== [] ? $minutos : 1));
+        $disponible = $resultado['disponible'] && $resultado[$serie] !== [];
+        if ($disponible) {
+            Cache::put($clave.':ultimo', $resultado, now()->addMinutes($minutos * 6));
+        } else {
+            $ultimo = Cache::get($clave.':ultimo');
+            if ($ultimo !== null) {
+                $resultado = $ultimo + ['desactualizado' => true];
+            }
+        }
+        Cache::put($clave, $resultado, now()->addMinutes($disponible ? $minutos : 1));
 
         return $resultado;
     }

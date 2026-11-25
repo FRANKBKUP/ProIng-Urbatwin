@@ -157,8 +157,8 @@ class AtlasTerritorialTest extends TestCaseConBD
             ],
         ])]);
         $this->actingAs($this->usuario('Consulta'))->getJson('/api/geo/lluvia/mapa/PE')->assertOk()
-            ->assertJsonPath('puntos', 1)->assertJsonCount(2, 'pasos')
-            ->assertJsonPath('pasos.0.muestras.0.mm', 0)->assertJsonPath('pasos.1.muestras.0.mm', 6.1);
+            ->assertJsonPath('puntos', 1)->assertJsonCount(6, 'pasos')
+            ->assertJsonPath('pasos.0.muestras.0.mm', 0)->assertJsonPath('pasos.5.muestras.0.mm', 6.1);
         $this->getJson('/api/geo/lluvia/mapa/PE-AJENO')->assertNotFound();
         Http::assertSentCount(1);
     }
@@ -176,6 +176,25 @@ class AtlasTerritorialTest extends TestCaseConBD
             ->assertJsonPath('lugar', 'Provincia de referencia')->assertJsonPath('disponible', false)
             ->assertJsonCount(0, 'dias');
         Http::assertSent(fn ($solicitud) => str_contains($solicitud->url(), 'forecast_days=7'));
+    }
+
+    public function test_el_mapa_conserva_la_ultima_serie_al_fallar_la_actualizacion(): void
+    {
+        $this->region();
+        Http::preventStrayRequests();
+        Http::fake(['https://api.open-meteo.com/v1/forecast*' => Http::sequence()
+            ->push(['hourly' => ['time' => ['2026-11-24T06:00'], 'precipitation' => [3.2]]])
+            ->push([], 429)]);
+        $this->actingAs($this->usuario('Consulta'));
+
+        $url = '/api/geo/lluvia/mapa/PE';
+        $anterior = $this->getJson($url)->assertOk()->assertJsonPath('pasos.0.muestras.0.mm', 3.2)->json();
+        $this->travel(21)->minutes();
+        $this->getJson($url)->assertOk()
+            ->assertJsonPath('desactualizado', true)
+            ->assertJsonPath('consultado_en', $anterior['consultado_en'])
+            ->assertJsonPath('pasos.0.muestras.0.mm', 3.2);
+        Http::assertSentCount(2);
     }
 
     private function region(): void

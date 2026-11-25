@@ -5,6 +5,8 @@ import '../css/geo.css';
 import { iniciarAtlas } from './atlas-mapa.js';
 import { iniciarPersonas } from './personas-mapa.js';
 import { iniciarExploracion } from './geo-exploracion.js';
+import { iniciarContextoMapa } from './geo-contexto.js';
+import { iniciarLluviaMapa } from './geo-lluvia-mapa.js';
 
 const mapaBase = {
     urbano: {
@@ -42,6 +44,7 @@ function estiloInicial(satelite) {
     const fuentesBase = satelite ? mapaBase : { urbano: mapaBase.urbano };
     return {
         version: 8,
+        glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
         sources: {
             ...fuentesBase,
             cobertura: { type: 'geojson', data: vacio },
@@ -107,7 +110,10 @@ function iniciarVisor() {
     let puntosMedidos = [];
     let focoPendiente = visor.dataset.lugar;
     let puntoActual = null;
-    const exploracion = iniciarExploracion(visor, pedir);
+    const lluvia = iniciarLluviaMapa(visor, pedir);
+    const exploracion = iniciarExploracion(visor, pedir, lluvia.cambiarRegion);
+    const fichaFlotante = el('ficha-dialogo');
+    let contextoMapa;
     const panel = el('panel-lectura');
     const botonPanel = el('ampliar');
     const botonPantalla = el('pantalla');
@@ -131,17 +137,18 @@ function iniciarVisor() {
     botonPanel.addEventListener('click', () => actualizarPanel(!panelVisible, true));
     fondoPanel.addEventListener('click', () => actualizarPanel(false, true));
     el('cerrar-panel').addEventListener('click', () => actualizarPanel(false, true));
-    el('ver-punto').addEventListener('click', () => {
-        actualizarPanel(true);
-        el('ficha-titulo').scrollIntoView({ block: 'start' });
-        el('ficha-titulo').tabIndex = -1;
-        el('ficha-titulo').focus({ preventScroll: true });
-    });
+    el('ver-punto').addEventListener('click', abrirFicha);
+    el('abrir-ficha').addEventListener('click', abrirFicha);
+    function abrirFicha() {
+        if (!fichaFlotante.open) fichaFlotante.showModal();
+    }
     movil.addEventListener('change', () => actualizarPanel(!movil.matches));
     function vistaCompleta() {
         const activa = document.fullscreenElement === visor || visor.classList.contains('geo-vista-completa');
         botonPantalla.setAttribute('aria-pressed', String(activa));
-        botonPantalla.querySelector('span').textContent = activa ? 'Salir de pantalla completa' : 'Pantalla completa';
+        const texto = activa ? 'Salir de pantalla completa' : 'Pantalla completa';
+        botonPantalla.querySelector('span').textContent = texto;
+        botonPantalla.setAttribute('aria-label', texto);
         mapa?.resize();
     }
     botonPantalla.addEventListener('click', async () => {
@@ -190,12 +197,15 @@ function iniciarVisor() {
             mapa.addControl(new AttributionControl({ compact: true }), 'bottom-right');
             mapa.once('load', () => {
                 mapaListo = true;
-                for (const control of [base, relieve, medir, el('centrar'), mostrarCapa, curvas]) {
+                for (const control of [base, relieve, medir, el('centrar'), mostrarCapa, curvas, el('tema-opacidad')]) {
                     control.disabled = false;
                 }
                 cambiarBase();
-                atlas = iniciarAtlas(mapa, visor, temas, cambiarModo, pedir);
-                exploracion.conectarMapa(mapa);
+                contextoMapa = iniciarContextoMapa(mapa, visor);
+                lluvia.conectar(mapa);
+                atlas = iniciarAtlas(mapa, visor, temas, cambiarModo, pedir,
+                    punto => contextoMapa(punto) ?? lluvia.inspeccionar(punto));
+                exploracion.conectar();
                 iniciarPersonas(mapa, visor, (lon, lat) => enfocarPunto(lon, lat, 13, false), pedir);
                 dibujarCapa();
                 dibujarLugares();
@@ -226,7 +236,9 @@ function iniciarVisor() {
                     if (lugar) {
                         enfocarLugar(lugar);
                     } else {
-                        enfocarPunto(lngLat.lng, lngLat.lat, mapa.getZoom());
+                        const objeto = contextoMapa?.(point) ?? lluvia.inspeccionar(point);
+                        enfocarPunto(lngLat.lng, lngLat.lat, mapa.getZoom(), true, objeto);
+                        if (objeto?.url) abrirFicha();
                     }
                 }
             });
@@ -257,6 +269,8 @@ function iniciarVisor() {
     el('centrar').addEventListener('click', encuadrar);
     medir.addEventListener('click', alternarMedicion);
     mostrarCapa.addEventListener('change', mostrarSuperposiciones);
+    el('tema-opacidad').addEventListener('input', mostrarOpacidadTematica);
+    visor.addEventListener('lluvia:visualizacion', mostrarOpacidadTematica);
     curvas.addEventListener('change', cambiarCurvas);
     el('opacidad').addEventListener('input', () => {
         if (mapaListo) mapa.setPaintProperty('peligro-relleno', 'fill-opacity', Number(el('opacidad').value) / 100);
@@ -324,6 +338,12 @@ function iniciarVisor() {
         visor.classList.toggle('geo-sin-capa', !mostrarCapa.checked);
     }
 
+    function mostrarOpacidadTematica() {
+        if (!mapa?.getLayer('atlas-tema-color')) return;
+        const amortiguacion = visor.classList.contains('geo-lluvia-activa') ? .46 : 1;
+        mapa.setPaintProperty('atlas-tema-color', 'fill-opacity', Number(el('tema-opacidad').value) * amortiguacion / 100);
+    }
+
     function cambiarCurvas() {
         if (!mapaListo) return;
         if (curvas.checked && !mapa.getLayer('curvas-dem')) {
@@ -353,14 +373,14 @@ function iniciarVisor() {
         resultado.hidden = true;
     }
 
-    function enfocarPunto(lon, lat, zoom = 13, mostrarPin = true) {
+    function enfocarPunto(lon, lat, zoom = 13, mostrarPin = true, objeto = null) {
         puntoActual = { lon, lat, zoom, mostrarPin };
         longitud.value = lon.toFixed(7);
         latitud.value = lat.toFixed(7);
         moverAlPunto(puntoActual);
         analizarPunto(puntoActual);
         el('ver-punto').hidden = false;
-        exploracion.seleccionarPunto(lon, lat);
+        exploracion.seleccionarPunto(lon, lat, objeto);
     }
 
     function moverAlPunto({ lon, lat, zoom, mostrarPin }) {

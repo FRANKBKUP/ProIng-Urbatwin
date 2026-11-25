@@ -14,6 +14,7 @@
     <div class="geo-workspace" id="visor-geo" data-vista="{{ $vistaAtlas }}" data-modo="{{ $vistaAtlas === 'huella' ? 'huella' : 'atlas' }}"
         data-limites="{{ route('geo.atlas.limites') }}" data-teselas="{{ url('/api/geo/atlas') }}"
         data-ficha="{{ route('geo.atlas.ficha') }}" data-lluvia="{{ route('geo.lluvia', ['producto' => '__producto__', 'codigo' => '__codigo__']) }}"
+        data-huella="{{ asset('piura-huella-2017.geojson') }}" data-titicaca="{{ asset('lago-titicaca.geojson') }}" data-img="{{ asset('img') }}"
         data-provincia="{{ route('geo.atlas.provincia', ['provincia' => '__codigo__']) }}" data-equipo="{{ route('geo.atlas.equipo') }}"
         data-perfiles="{{ route('geo.perfil.mapa') }}" data-pronostico="{{ url('/api/geo/pronostico') }}"
         data-lugares="{{ route('geo.lugares.mapa') }}" data-guardar="{{ route('geo.lugares.guardar') }}"
@@ -25,9 +26,13 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg>
                     <span>Explorar</span>
                 </button>
-                <button class="btn-sec" id="geo-pantalla" type="button" aria-pressed="false">
+                <button class="btn-sec" id="geo-pantalla" type="button" aria-pressed="false" aria-label="Pantalla completa">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg>
                     <span>Pantalla completa</span>
+                </button>
+                <button class="btn-sec" id="geo-lluvia-abrir" type="button" aria-controls="geo-tiempo" aria-expanded="false" disabled>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 15a4 4 0 1 1 1-7 6 6 0 0 1 11 2 3 3 0 1 1 1 5M8 18l-1 2m5-2-1 2m5-2-1 2"/></svg>
+                    Lluvia
                 </button>
             </div>
             <details class="geo-map-tools geo-ajustes">
@@ -47,7 +52,7 @@
                 </div>
             </details>
             <p id="geo-mapa-estado" class="geo-mapa-estado" role="status">Cargando mapa…</p>
-            <button type="button" class="btn geo-boton-punto" id="geo-ver-punto" hidden>Ver ficha del punto</button>
+            <button type="button" class="btn geo-boton-punto" id="geo-ver-punto" aria-haspopup="dialog" hidden>Ver ficha del punto</button>
             <p id="geo-medida" class="geo-medida" role="status" hidden></p>
             <div class="geo-legend geo-legend-huella" aria-label="Leyenda de huellas">
                 <span><i class="geo-muestra peligro"></i><span id="geo-leyenda-peligro">Huella de inundación</span></span>
@@ -56,15 +61,23 @@
             <div id="geo-atlas-leyenda" class="geo-legend geo-legend-atlas" aria-label="Leyenda de la capa"></div>
             <div class="geo-tiempo" id="geo-tiempo" hidden>
                 <div class="geo-tiempo-cabecera">
-                    <strong>Precipitación por hora</strong>
-                    <button type="button" class="btn-sec" id="geo-cerrar-tiempo" aria-label="Cerrar mapa de precipitación">Cerrar</button>
+                    <strong>Lluvia en el mapa</strong>
+                    <button type="button" class="btn-sec" id="geo-cerrar-tiempo" aria-label="Cerrar mapa de precipitación">×</button>
                 </div>
+                <div class="geo-tiempo-modos" role="group" aria-label="Fuente de la animación">
+                    <button type="button" class="btn-sec" data-lluvia-modo="pronostico" aria-pressed="true">Pronóstico 24 h</button>
+                    <button type="button" class="btn-sec" data-lluvia-modo="satelite" aria-pressed="false">Satélite reciente</button>
+                </div>
+                <p id="geo-tiempo-estado" role="status"></p>
+                <button type="button" class="btn-sec" id="geo-intentar-tiempo" hidden>Volver a consultar</button>
                 <div class="geo-tiempo-controles">
                     <button type="button" class="btn-sec" id="geo-reproducir">Reproducir</button>
                     <label for="geo-hora"><output id="geo-hora-actual" for="geo-hora"></output></label>
                     <input id="geo-hora" type="range" min="0" max="0" value="0" step="1">
                 </div>
-                <p class="geo-tiempo-escala"><i aria-hidden="true"></i><span>Menor → mayor intensidad · mm/h</span></p>
+                <p class="geo-tiempo-escala"><i aria-hidden="true"></i><span>Lluvia más suave → más intensa</span></p>
+                <p class="geo-tiempo-nasa"><a href="https://worldview.earthdata.nasa.gov/" target="_blank" rel="noopener noreferrer">Ver escala satelital en NASA Worldview</a></p>
+                <label class="geo-tiempo-opacidad" for="geo-lluvia-opacidad">Intensidad del color <input type="range" id="geo-lluvia-opacidad" min="15" max="85" value="48"></label>
             </div>
         </section>
 
@@ -95,6 +108,9 @@
             </select>
             <div class="geo-modulos">
                 <label class="geo-check"><input type="checkbox" id="geo-mostrar-capa" checked disabled> Mostrar capa de análisis</label>
+                <label class="geo-tiempo-opacidad" for="geo-tema-opacidad">Relleno de la capa <input type="range" id="geo-tema-opacidad" min="0" max="80" value="22" disabled></label>
+                <label class="geo-check"><input type="checkbox" id="geo-agua" checked disabled> Lagos y ríos</label>
+                <label class="geo-check"><input type="checkbox" id="geo-incidentes" checked disabled> Inundaciones documentadas y reportes</label>
                 <label class="geo-check"><input type="checkbox" id="geo-curvas" disabled> Curvas de nivel · 200 m</label>
                 <label class="geo-check"><input type="checkbox" id="geo-lluvia-mapa" disabled> Animación de precipitación</label>
                 <p id="geo-capas-estado" role="status"></p>
@@ -137,7 +153,9 @@
                 </form>
                 <div class="geo-result" id="geo-resultado" role="status" aria-live="polite" hidden></div>
             </section>
-            @include('geo.exploracion')
+            <div class="geo-detalle">
+                <button type="button" class="btn-sec" id="geo-abrir-ficha" aria-haspopup="dialog">Abrir ficha y gráficos</button>
+            </div>
             <details class="geo-detalle geo-personas">
                 <summary>Personas en el mapa</summary>
                 <label for="geo-persona">Equipo del proyecto</label>
@@ -205,6 +223,7 @@
                 </form>
             </details>
         </aside>
+    @include('geo.exploracion')
     <dialog id="guia-visor" class="atlas-dialogo">
         <form method="dialog"><button class="btn-sec" aria-label="Cerrar guía">Cerrar</button></form>
         <h2>Cómo explorar el visor</h2>
